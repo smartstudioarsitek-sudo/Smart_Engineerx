@@ -3,7 +3,7 @@ import math
 import google.generativeai as genai
 
 # ==========================================
-# 1. KONFIGURASI HALAMAN & CSS (TEMA GAGAH TAPI ADEM)
+# 1. KONFIGURASI HALAMAN & CSS (TEMA CERAH & KONTRAS)
 # ==========================================
 st.set_page_config(
     page_title="Smart_Engineer OMNI-X",
@@ -12,19 +12,37 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS: Navy Blue & Amber Theme
+# Custom CSS: Bright Blue Sidebar & Clean Content
 st.markdown("""
     <style>
-    /* Main Background */
-    .stApp { background-color: #ECEFF1; }
+    /* Main Background - Abu-abu sangat muda agar mata nyaman */
+    .stApp { background-color: #F5F7F9; }
     
-    /* Sidebar Styling */
+    /* SIDEBAR STYLING - REVISI WARNA LEBIH CERAH */
     section[data-testid="stSidebar"] {
-        background-color: #0D47A1; /* Navy Blue */
-        color: #E3F2FD;
+        background-color: #1565C0; /* Biru Engineering Cerah */
+        color: #FFFFFF; /* Teks Putih Mutlak */
     }
     
-    /* Headers */
+    /* Memastikan semua teks di sidebar putih & kontras */
+    section[data-testid="stSidebar"] h1, 
+    section[data-testid="stSidebar"] h2, 
+    section[data-testid="stSidebar"] h3, 
+    section[data-testid="stSidebar"] label, 
+    section[data-testid="stSidebar"] span,
+    section[data-testid="stSidebar"] div,
+    section[data-testid="stSidebar"] p {
+        color: #FFFFFF !important;
+    }
+    
+    /* Input fields di sidebar agar tetap terlihat jelas */
+    section[data-testid="stSidebar"] input, 
+    section[data-testid="stSidebar"] select {
+        color: #333333 !important;
+        background-color: #FFFFFF !important;
+    }
+
+    /* Headers di Main Content */
     h1, h2, h3 {
         color: #0D47A1;
         font-family: 'Segoe UI', sans-serif;
@@ -35,10 +53,10 @@ st.markdown("""
     .res-box {
         background-color: #FFFFFF;
         padding: 25px;
-        border-radius: 10px;
+        border-radius: 12px;
         border-left: 8px solid #FF6F00; /* Amber Accent */
         margin-top: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         color: #263238;
     }
     
@@ -52,27 +70,27 @@ st.markdown("""
     
     .res-val {
         font-weight: 800;
-        color: #0D47A1;
+        color: #1565C0;
         font-size: 1.3rem;
         font-family: 'Consolas', monospace;
     }
     
     /* Buttons */
     div.stButton > button {
-        background: linear-gradient(135deg, #1565C0, #0D47A1);
+        background: linear-gradient(135deg, #1565C0, #0277BD);
         color: white;
         font-weight: bold;
         border: none;
         width: 100%;
         padding: 12px;
-        border-radius: 6px;
+        border-radius: 8px;
         transition: all 0.3s ease;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     div.stButton > button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(13, 71, 161, 0.3);
-        background: linear-gradient(135deg, #FF6F00, #EF6C00); /* Amber Hover */
+        box-shadow: 0 5px 15px rgba(21, 101, 192, 0.3);
+        background: linear-gradient(135deg, #FF6F00, #F57C00); /* Amber Hover */
     }
 
     /* Status Badges */
@@ -85,16 +103,17 @@ st.markdown("""
     
     /* Chat Message Style */
     .stChatMessage {
-        background-color: rgba(255,255,255,0.5);
+        background-color: #FFFFFF;
+        border: 1px solid #E0E0E0;
         border-radius: 10px;
-        padding: 10px;
+        padding: 15px;
         margin-bottom: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. HELPER FUNCTIONS & PERSONA AI (YANG LEBIH ADEM)
+# 2. HELPER FUNCTIONS & PERSONA AI
 # ==========================================
 def safe_div(n, d, default=0.0):
     """Mencegah error pembagian nol"""
@@ -145,15 +164,17 @@ gems_persona = {
 # 3. SIDEBAR NAVIGATION & AI CHAT
 # ==========================================
 with st.sidebar:
+    # Logo Area dengan Background Transparan Putih tipis
     st.markdown("""
-    <div style="text-align: center; padding: 20px 10px; background: rgba(255,255,255,0.1); border-radius: 12px; margin-bottom: 20px;">
-        <h2 style="color:#ffffff; margin:0; font-size: 1.6rem; letter-spacing: 1px;">Smart_Engineer</h2>
-        <div style="color:#FF6F00; font-weight:800; letter-spacing:3px; font-size:0.75rem; margin-top:5px;">OMNI-X ULTIMATE</div>
+    <div style="text-align: center; padding: 20px 10px; background: rgba(255,255,255,0.15); border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.2);">
+        <h2 style="margin:0; font-size: 1.6rem; letter-spacing: 1px; color: #FFFFFF; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">Smart_Engineer</h2>
+        <div style="color:#FFD54F; font-weight:800; letter-spacing:3px; font-size:0.75rem; margin-top:5px; text-transform:uppercase;">OMNI-X ULTIMATE</div>
     </div>
     """, unsafe_allow_html=True)
     
     # --- MENU UTAMA ---
-    category = st.selectbox("📂 PILIH KATEGORI MODUL", [
+    st.markdown("### 📂 MENU UTAMA")
+    category = st.selectbox("Pilih Kategori:", [
         "🏠 DASHBOARD",
         "A. BEBAN & ATAP",
         "B. GEMPA & STABILITAS",
@@ -166,24 +187,25 @@ with st.sidebar:
     st.markdown("---")
     
     # --- SUB MENU (DYNAMIC) ---
+    st.markdown("### 🛠️ PILIH MODUL")
     module = None
     if category == "A. BEBAN & ATAP":
-        module = st.radio("Pilih Modul:", ["1. Analisis Beban (Wt)", "2. Konstruksi Atap", "3. Tributary Area", "4. Pusat Massa (COG)"])
+        module = st.radio("Modul Tersedia:", ["1. Analisis Beban (Wt)", "2. Konstruksi Atap", "3. Tributary Area", "4. Pusat Massa (COG)"])
     elif category == "B. GEMPA & STABILITAS":
-        module = st.radio("Pilih Modul:", ["5. Respon Spektrum", "6. Drift & Simpangan", "7. Eksentrisitas"])
+        module = st.radio("Modul Tersedia:", ["5. Respon Spektrum", "6. Drift & Simpangan", "7. Eksentrisitas"])
     elif category == "C. STRUKTUR ATAS":
-        module = st.radio("Pilih Modul:", ["8. Pelat Lantai", "9. Lendutan Pelat", "10. Desain Balok", "11. Torsi Balok", "12. Desain Kolom", "13. Shear Wall", "14. Desain Tangga"])
+        module = st.radio("Modul Tersedia:", ["8. Pelat Lantai", "9. Lendutan Pelat", "10. Desain Balok", "11. Torsi Balok", "12. Desain Kolom", "13. Shear Wall", "14. Desain Tangga"])
     elif category == "D. PONDASI DANGKAL":
-        module = st.radio("Pilih Modul:", ["15. Pondasi Telapak", "16. Pondasi Lajur", "17. Sloof (Tie Beam)", "18. Pelat Westergaard"])
+        module = st.radio("Modul Tersedia:", ["15. Pondasi Telapak", "16. Pondasi Lajur", "17. Sloof (Tie Beam)", "18. Pelat Westergaard"])
     elif category == "E. PONDASI DALAM":
-        module = st.radio("Pilih Modul:", ["19. Pile Cap & Pons", "20. Meyerhof (Daya Dukung)", "21. Momen Tiang", "22. Lateral Tiang", "23. Kalendering Hiley", "24. Efisiensi Grup", "25. Cek Cabut (Uplift)"])
+        module = st.radio("Modul Tersedia:", ["19. Pile Cap & Pons", "20. Meyerhof (Daya Dukung)", "21. Momen Tiang", "22. Lateral Tiang", "23. Kalendering Hiley", "24. Efisiensi Grup", "25. Cek Cabut (Uplift)"])
     elif category == "F. STRUKTUR KHUSUS":
-        module = st.radio("Pilih Modul:", ["26. Retaining Wall", "27. Kolam / Tandon", "28. Jembatan", "29. Konversi Tulangan"])
+        module = st.radio("Modul Tersedia:", ["26. Retaining Wall", "27. Kolam / Tandon", "28. Jembatan", "29. Konversi Tulangan"])
 
     # --- AI CHATBOT INTEGRATION ---
     st.markdown("---")
-    with st.expander("🤖 KONSULTASI AI (GEN-AI)", expanded=True):
-        st.caption("Powered by Google Gemini")
+    with st.expander("🤖 KONSULTASI AI (PROF. GEMS)", expanded=True):
+        st.markdown("<div style='color:white; font-size:0.8rem; margin-bottom:10px;'>Powered by Google Gemini</div>", unsafe_allow_html=True)
         
         # 1. API KEY INPUT
         api_key = st.text_input("🔑 Google API Key:", type="password", help="Wajib diisi. Dapatkan di aistudio.google.com")
@@ -210,7 +232,8 @@ with st.sidebar:
 
         # Tampilkan Pesan
         for msg in st.session_state.messages:
-            st.chat_message(msg["role"]).write(msg["content"])
+            with st.chat_message(msg["role"]):
+                st.markdown(f"<div style='color:black;'>{msg['content']}</div>", unsafe_allow_html=True)
 
         # 5. INPUT CHAT
         if prompt := st.chat_input(f"Bicara dengan {selected_brain}..."):
@@ -218,7 +241,8 @@ with st.sidebar:
                 st.error("⚠️ Masukkan API Key dulu ya, Kak.")
             else:
                 st.session_state.messages.append({"role": "user", "content": prompt})
-                st.chat_message("user").write(prompt)
+                with st.chat_message("user"):
+                    st.markdown(f"<div style='color:black;'>{prompt}</div>", unsafe_allow_html=True)
                 
                 try:
                     genai.configure(api_key=api_key)
@@ -241,17 +265,18 @@ with st.sidebar:
                         reply = response.text
                     
                     st.session_state.messages.append({"role": "assistant", "content": reply})
-                    st.chat_message("assistant").write(reply)
+                    with st.chat_message("assistant"):
+                        st.markdown(f"<div style='color:black;'>{reply}</div>", unsafe_allow_html=True)
                     
                 except Exception as e:
                     st.error(f"Mohon maaf, ada kendala koneksi AI: {str(e)}")
 
     # --- FOOTER WAJIB ---
     st.markdown("""
-    <div style="text-align: center; margin-top: 50px; padding: 20px; background: rgba(0,0,0,0.2); font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.2);">
-        <div style="color: #ffffff; font-weight: bold;">by smartstudioarsitek@gmail.com</div>
-        <div style="color: #FF6F00; margin-top: 10px; font-weight: bold;">Donasi : Bank Jago Syariah</div>
-        <div style="color: #ffffff; font-family: monospace; font-size: 1rem;">5028 4297 0355</div>
+    <div style="text-align: center; margin-top: 50px; padding: 20px; background: rgba(0,0,0,0.1); font-size: 0.85rem; border-top: 1px solid rgba(255,255,255,0.3); color: white;">
+        <div style="font-weight: bold;">by smartstudioarsitek@gmail.com</div>
+        <div style="color: #FFD54F; margin-top: 10px; font-weight: bold; font-size: 0.9rem;">Donasi : Bank Jago Syariah</div>
+        <div style="font-family: monospace; font-size: 1.1rem; letter-spacing: 1px; font-weight:bold;">5028 4297 0355</div>
     </div>
     """, unsafe_allow_html=True)
 
