@@ -3,7 +3,7 @@ import math
 import google.generativeai as genai
 
 # ==========================================
-# 1. KONFIGURASI HALAMAN & CSS (TEMA GAGAH)
+# 1. KONFIGURASI HALAMAN & CSS (TEMA GAGAH TAPI ADEM)
 # ==========================================
 st.set_page_config(
     page_title="Smart_Engineer OMNI-X",
@@ -82,47 +82,62 @@ st.markdown("""
     
     /* Divider */
     hr { margin: 10px 0; border-top: 1px dashed #B0BEC5; }
+    
+    /* Chat Message Style */
+    .stChatMessage {
+        background-color: rgba(255,255,255,0.5);
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. HELPER FUNCTIONS & PERSONA AI
+# 2. HELPER FUNCTIONS & PERSONA AI (YANG LEBIH ADEM)
 # ==========================================
 def safe_div(n, d, default=0.0):
     """Mencegah error pembagian nol"""
     return n / d if d != 0 else default
 
-# Database Persona AI (GEMS BRAIN)
+# Database Persona AI (GEMS BRAIN - REVISI HUMANIS & ISLAMI)
 gems_persona = {
     "👑 The GEMS Grandmaster": """
-        ANDA ADALAH "THE GEMS GRANDMASTER" (Omniscient Project Director).
-        Gaya: Otoritatif, Tegas, Solutif. Menguasai seluruh aspek SIPIL, ARSITEK, dan MANAJEMEN.
-        Tugas: Jawab pertanyaan dengan data teknis, referensi SNI, dan solusi konkret.
+        ANDA ADALAH "THE GEMS GRANDMASTER" (Direktur Utama yang Bijaksana).
+        
+        KARAKTER:
+        - Memulai dengan salam (Assalamu'alaikum) dan Bismillah.
+        - Menggabungkan kecerdasan teknis (Science) dengan kebijaksanaan spiritual (Hikmah).
+        - Memandang setiap proyek bangunan sebagai "Amanah" yang harus kuat, aman, dan bermanfaat.
+        - Gaya bicara: Berwibawa namun mengayomi (seperti Kiai atau Profesor sepuh). Tidak galak, tapi tegas dalam prinsip keamanan struktur.
+        
+        KAPABILITAS:
+        - Menguasai integrasi Struktur, Geoteknik, Manajemen, dan Hukum.
+        - Jika user bingung, bimbing pelan-pelan.
     """,
     "🏗️ Ahli Struktur (Gedung)": """
         ANDA ADALAH PRINCIPAL STRUCTURAL ENGINEER.
-        Fokus: SNI 2847 (Beton), SNI 1726 (Gempa).
-        Tugas: Analisis beban, dimensi balok/kolom, penulangan. Jangan asumsi, minta data jika kurang.
+        Fokus: Keamanan & Kekuatan (SNI 2847 & SNI 1726).
+        Gaya: Profesional, detail, dan teliti. Selalu mengingatkan bahwa "Struktur yang kuat menyelamatkan nyawa".
+        Tugas: Analisis beban, dimensi, dan penulangan dengan presisi.
     """,
     "🪨 Ahli Geoteknik (Tanah)": """
         ANDA ADALAH SENIOR GEOTECHNICAL ENGINEER.
-        Fokus: Mekanika Tanah, Pondasi, Dinding Penahan.
-        Tugas: Analisis data Sondir/SPT, daya dukung pondasi, dan kestabilan lereng.
-    """,
-    "🌊 Ahli Sumber Daya Air": """
-        ANDA ADALAH SENIOR HYDRAULIC ENGINEER.
-        Fokus: Drainase, Bendung, Banjir.
-        Tugas: Perhitungan debit banjir, dimensi saluran, dan bangunan air.
+        Fokus: Pondasi & Tanah (SNI 8460).
+        Gaya: Hati-hati dan waspada. Sering mengingatkan "Bangunan kuat dimulai dari tanah yang baik".
+        Tugas: Analisis Sondir/SPT dan daya dukung.
     """,
     "💰 Ahli Estimator (QS)": """
         ANDA ADALAH CHIEF QUANTITY SURVEYOR.
-        Fokus: RAB, Analisa Harga Satuan, Efisiensi Biaya.
-        Tugas: Estimasi volume dan biaya proyek.
+        Fokus: Efisiensi & Amanah Anggaran.
+        Gaya: Transparan dan jujur. Mengingatkan agar "Jangan mengurangi takaran/spek demi keuntungan".
+        Tugas: Hitung RAB dan volume material.
     """,
     "🕌 Ahli Fiqih Bangunan": """
-        ANDA ADALAH PENASIHAT SYARIAH KONSTRUKSI.
-        Fokus: Arah Kiblat, Akad Proyek, Adab Membangun.
-        Gaya: Bijaksana dan menyejukkan.
+        ANDA ADALAH USTADZ & AHLI FIQIH BANGUNAN.
+        Fokus: Keberkahan, Arah Kiblat, Privasi (Hijab antar ruang), dan Adab Tetangga.
+        Gaya: Lembut, menyejukkan, sering mengutip dalil atau kaidah fiqih muamalah yang relevan dengan konstruksi.
+        Tugas: Memberi nasihat agar bangunan membawa berkah bagi penghuninya.
     """
 }
 
@@ -173,14 +188,14 @@ with st.sidebar:
         # 1. API KEY INPUT
         api_key = st.text_input("🔑 Google API Key:", type="password", help="Wajib diisi. Dapatkan di aistudio.google.com")
         
-        # 2. MODEL SELECTOR (SESUAI REQUEST)
+        # 2. MODEL SELECTOR
         selected_model = st.selectbox(
             "Versi Otak:",
             [
-                "models/gemini-pro-latest",
-                "models/gemini-flash-latest", 
-                "models/gemini-flash-lite-latest",
-                "models/gemini-1.5-flash"
+                "models/gemini-pro-latest",        # Paling Cerdas
+                "models/gemini-flash-latest",      # Paling Cepat
+                "models/gemini-flash-lite-latest", # Ringan
+                "models/gemini-1.5-flash"          # Alternatif
             ],
             index=1,
             help="Pilih 'Pro' untuk analisis berat, 'Flash' untuk respon cepat."
@@ -191,16 +206,16 @@ with st.sidebar:
         
         # 4. CHAT HISTORY
         if "messages" not in st.session_state:
-            st.session_state.messages = [{"role": "assistant", "content": "Halo! Saya Prof. GEMS. Ada masalah teknik yang bisa saya bantu?"}]
+            st.session_state.messages = [{"role": "assistant", "content": "Assalamu'alaikum. Saya Grandmaster GEMS. Mari kita rencanakan bangunan yang aman dan berkah. Ada yang bisa dibantu?"}]
 
         # Tampilkan Pesan
         for msg in st.session_state.messages:
             st.chat_message(msg["role"]).write(msg["content"])
 
         # 5. INPUT CHAT
-        if prompt := st.chat_input(f"Tanya {selected_brain}..."):
+        if prompt := st.chat_input(f"Bicara dengan {selected_brain}..."):
             if not api_key:
-                st.error("⚠️ Masukkan API Key dulu!")
+                st.error("⚠️ Masukkan API Key dulu ya, Kak.")
             else:
                 st.session_state.messages.append({"role": "user", "content": prompt})
                 st.chat_message("user").write(prompt)
@@ -221,7 +236,7 @@ with st.sidebar:
                     {prompt}
                     """
                     
-                    with st.spinner("Sedang berpikir..."):
+                    with st.spinner("Sedang meramu jawaban terbaik..."):
                         response = model_ai.generate_content(full_prompt)
                         reply = response.text
                     
@@ -229,7 +244,7 @@ with st.sidebar:
                     st.chat_message("assistant").write(reply)
                     
                 except Exception as e:
-                    st.error(f"Error AI: {str(e)}")
+                    st.error(f"Mohon maaf, ada kendala koneksi AI: {str(e)}")
 
     # --- FOOTER WAJIB ---
     st.markdown("""
