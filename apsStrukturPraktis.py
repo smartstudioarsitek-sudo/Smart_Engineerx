@@ -3,7 +3,7 @@ import math
 import google.generativeai as genai
 
 # ==========================================
-# 1. KONFIGURASI HALAMAN & CSS (TEMA WHITE-CLEAN)
+# 1. KONFIGURASI HALAMAN & CSS (TEMA WHITE-CLEAN & HIGH CONTRAST)
 # ==========================================
 st.set_page_config(
     page_title="Smart_Engineer OMNI-X",
@@ -15,16 +15,16 @@ st.set_page_config(
 # Custom CSS: Sidebar Putih, Teks Hitam, Footer Merah
 st.markdown("""
     <style>
-    /* Main Background - Abu-abu sangat muda/Netral */
+    /* Main Background - Abu-abu sangat muda/Netral agar mata nyaman */
     .stApp { background-color: #F8F9FA; }
     
-    /* --- SIDEBAR STYLING --- */
+    /* --- SIDEBAR STYLING (WHITE MODE) --- */
     section[data-testid="stSidebar"] {
         background-color: #FFFFFF !important; /* Sidebar Putih Mutlak */
-        border-right: 1px solid #E0E0E0;
+        border-right: 1px solid #E0E0E0; /* Garis pemisah tipis */
     }
     
-    /* Semua Teks di Sidebar Menjadi HITAM */
+    /* MEMAKSA SEMUA TEKS DI SIDEBAR MENJADI HITAM PEKAT */
     section[data-testid="stSidebar"] h1, 
     section[data-testid="stSidebar"] h2, 
     section[data-testid="stSidebar"] h3, 
@@ -32,14 +32,15 @@ st.markdown("""
     section[data-testid="stSidebar"] span,
     section[data-testid="stSidebar"] div,
     section[data-testid="stSidebar"] p,
-    section[data-testid="stSidebar"] .stRadio label {
+    section[data-testid="stSidebar"] .stMarkdown {
         color: #000000 !important;
         font-weight: 500;
     }
     
-    /* Input fields di sidebar */
+    /* Styling Input Fields di Sidebar agar kontras */
     section[data-testid="stSidebar"] input, 
-    section[data-testid="stSidebar"] select {
+    section[data-testid="stSidebar"] select,
+    section[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
         color: #000000 !important;
         background-color: #F5F5F5 !important;
         border: 1px solid #CCCCCC;
@@ -102,7 +103,7 @@ st.markdown("""
     .badge-no { background-color: #C62828; color: white; padding: 5px 12px; border-radius: 15px; font-weight: bold; font-size: 0.85rem;}
     .badge-warn { background-color: #F9A825; color: #263238; padding: 5px 12px; border-radius: 15px; font-weight: bold; font-size: 0.85rem;}
     
-    /* Footer Styling Specific */
+    /* Footer Styling Specific - MERAH */
     .sidebar-footer {
         text-align: center;
         margin-top: 30px;
@@ -161,7 +162,7 @@ gems_persona = {
 # 3. SIDEBAR NAVIGATION
 # ==========================================
 with st.sidebar:
-    # Logo / Branding (Text Hitam di atas Putih)
+    # Logo / Branding (Text Biru Tua di atas Putih)
     st.markdown("""
     <div style="text-align: center; padding: 15px; border-bottom: 2px solid #0D47A1; margin-bottom: 20px;">
         <h2 style="color:#0D47A1 !important; margin:0; font-size: 1.8rem; font-weight: 900;">Smart_Engineer</h2>
@@ -248,12 +249,13 @@ if category == "🏠 DASHBOARD":
         st.success("✅ **Integrasi HTML Original Berhasil**")
         st.write("Semua 29 Modul dari file SMARTSTURTUR 10.txt telah diporting ke Python.")
     with col2:
-        st.info("ℹ️ **Mode Sidebar: High Contrast**")
+        st.info("ℹ️ **Mode Sidebar: Putih (High Contrast)**")
         st.write("Background Putih, Teks Hitam, Footer Merah.")
 
 # --- A. BEBAN & ATAP ---
 elif module == "1. Analisis Beban (Wt)":
     st.header("1. Analisis Beban (Wt)")
+    st.caption("Referensi: SNI 1726 (Beban Gempa)")
     c1, c2 = st.columns(2)
     with c1:
         st.subheader("Atap")
@@ -268,43 +270,66 @@ elif module == "1. Analisis Beban (Wt)":
     
     N_typ = st.number_input("Jumlah Lantai Tipikal", 3)
     
-    if st.button("HITUNG"):
+    if st.button("HITUNG BERAT TOTAL (Wt)"):
+        # Logika: W = A * (DL + 0.3*LL)
         Wa = A1 * (D1 + 0.3*L1)
         Wt_typ = A2 * (D2 + 0.3*L2) * N_typ
-        Wt_tot = (Wa + Wt_typ)/100 # Original logic /100
-        st.markdown(f'<div class="res-box"><div>Wa: {Wa:,.0f}</div><div>Wt Typ: {Wt_typ:,.0f}</div><hr><div>Total Wt: <span class="res-val">{Wt_tot:.2f} kN</span></div></div>', unsafe_allow_html=True)
+        Wt_tot = (Wa + Wt_typ)/100 # Original logic /100 -> to kN (approx)
+        
+        st.markdown(f"""
+        <div class="res-box">
+            <div>Berat Atap (Wa): <span class="res-val">{Wa:,.0f} kg</span></div>
+            <div>Berat Tipikal (Wt_typ): <span class="res-val">{Wt_typ:,.0f} kg</span></div>
+            <hr>
+            <div>TOTAL SEISMIK (Wt): <span class="res-val">{Wt_tot:.2f} kN</span></div>
+        </div>""", unsafe_allow_html=True)
 
 elif module == "2. Konstruksi Atap":
     st.header("2. Konstruksi Atap")
+    st.caption("Metode ASD (Allowable Stress Design)")
     c1, c2 = st.columns(2)
     with c1:
-        La = st.number_input("Jarak Kuda-kuda (m)", 4.0)
-        sa = st.number_input("Jarak Gording (m)", 1.2)
-        aa = st.number_input("Sudut (deg)", 20.0)
+        La = st.number_input("Jarak Kuda-kuda (L) [m]", 4.0)
+        sa = st.number_input("Jarak Gording (s) [m]", 1.2)
+        aa = st.number_input("Sudut (α) [°]", 20.0)
         Wx = st.number_input("Profil C (Wx) [cm3]", 38.0)
     with c2:
-        qDa = st.number_input("DL (kg/m2)", 25.0)
-        Pa = st.number_input("LL (kg)", 100.0)
+        qDa = st.number_input("Beban Mati (qDL) [kg/m2]", 25.0)
+        Pa = st.number_input("Beban Hidup (P) [kg]", 100.0)
+        E_val = st.number_input("Modulus Elastisitas E [kg/cm2]", 2100000.0)
+        Ix_val = st.number_input("Inersia Ix [cm4]", 150.0)
         
-    if st.button("ANALISIS"):
+    if st.button("ANALISIS GORDING"):
         rad = math.radians(aa)
         q = 1.2 * qDa * sa # Logic JS Original
-        Mx = (1/8) * (q * math.cos(rad)) * (La**2) * 100 # kgcm
-        My = Mx * 0.1
+        # Momen ASD (Service)
+        # q_perp dan P_perp
+        q_perp = q * math.cos(rad) # kg/m
+        P_perp = Pa * math.cos(rad) # kg
+        
+        # Mx = 1/8 q L^2 + 1/4 P L
+        M_q = (1/8) * q_perp * (La**2) * 100 # kgcm
+        M_P = (1/4) * P_perp * La * 100 # kgcm
+        Mx = M_q + M_P
+        My = Mx * 0.1 # Approx weak axis
+        
         sig = safe_div(Mx, Wx)
         
-        # Deflection constants from original JS
-        E = 2.1e6
-        Ix = 150 
-        del_val = (5 * q * math.cos(rad) * math.pow(La*100, 4)) / (384 * E * Ix * 100)
+        # Deflection 
+        L_cm = La * 100
+        q_perp_cm = q_perp / 100 # kg/cm
+        del_q = (5 * q_perp_cm * math.pow(L_cm, 4)) / (384 * E_val * Ix_val)
+        del_P = (1 * P_perp * math.pow(L_cm, 3)) / (48 * E_val * Ix_val)
+        del_val = del_q + del_P
         
-        status = "AMAN" if (sig < 1600 and del_val < (La*100)/240) else "CEK PROFIL"
+        status = "AMAN" if (sig < 1600 and del_val < (L_cm/240)) else "CEK PROFIL"
         badge = "badge-ok" if status == "AMAN" else "badge-no"
         
         st.markdown(f"""
         <div class="res-box">
-            <div>Mx: <span class="res-val">{Mx:.0f} kgcm</span></div>
-            <div>Tegangan: <span class="res-val">{sig:.0f} kg/cm²</span></div>
+            <div>Momen Mx (Kuat): <span class="res-val">{Mx:.0f} kgcm</span></div>
+            <div>Momen My (Lemah): <span class="res-val">{My:.0f} kgcm</span></div>
+            <div>Tegangan (σ): <span class="res-val">{sig:.0f} kg/cm²</span></div>
             <div>Lendutan: <span class="res-val">{del_val:.2f} cm</span></div>
             <div>Status: <span class="{badge}">{status}</span></div>
         </div>""", unsafe_allow_html=True)
@@ -314,105 +339,155 @@ elif module == "3. Tributary Area":
     Pt = st.number_input("P (m)", 4.0)
     Lt = st.number_input("L (m)", 3.0)
     qt = st.number_input("q Pelat (kg/m²)", 120.0)
-    if st.button("HITUNG"):
-        st.markdown(f'<div class="res-box">Total: <span class="res-val">{Pt*Lt*qt:.0f} kg</span></div>', unsafe_allow_html=True)
+    if st.button("HITUNG BEBAN"):
+        Qt = Pt * Lt * qt
+        st.markdown(f'<div class="res-box">Total Beban: <span class="res-val">{Qt:,.0f} kg</span></div>', unsafe_allow_html=True)
 
 elif module == "4. Pusat Massa (COG)":
-    st.header("4. Pusat Massa")
-    Smx = st.number_input("Sum Momen X", 50000.0)
-    Smy = st.number_input("Sum Momen Y", 30000.0)
-    Wi = st.number_input("Berat Wi", 5000.0)
+    st.header("4. Pusat Massa (COG)")
+    c1, c2 = st.columns(2)
+    with c1:
+        Smx = st.number_input("Σ Momen Statis X", 50000.0)
+        Smy = st.number_input("Σ Momen Statis Y", 30000.0)
+    with c2:
+        Wi = st.number_input("Berat Total Struktur (Wi)", 5000.0)
     if st.button("HITUNG"):
-        st.markdown(f'<div class="res-box">Xm: {safe_div(Smx,Wi):.2f} m <br> Ym: {safe_div(Smy,Wi):.2f} m</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="res-box">Xm: <span class="res-val">{safe_div(Smx,Wi):.2f} m</span> <br> Ym: <span class="res-val">{safe_div(Smy,Wi):.2f} m</span></div>', unsafe_allow_html=True)
 
-# --- B. GEMPA ---
+# --- B. GEMPA (VERIFIKASI INPUT R & Ie) ---
 elif module == "5. Respon Spektrum":
-    st.header("5. Gempa SNI 1726")
-    Ss = st.number_input("Ss", 0.9)
-    Wt = st.number_input("Wt (kN)", 5000.0)
-    if st.button("HITUNG"):
+    st.header("5. Gempa SNI 1726 (Updated)")
+    c1, c2 = st.columns(2)
+    with c1:
+        Ss = st.number_input("Ss (Peta Gempa)", 0.9)
+        S1 = st.number_input("S1 (Peta Gempa)", 0.4)
+    with c2:
+        # PENTING: Input R dan Ie sesuai file asli
+        R_val = st.selectbox("Sistem Struktur (R)", 
+                             options=[8, 5, 3], 
+                             format_func=lambda x: f"R={x} (SRPMK/SRPMM/Biasa)")
+        Ie_val = st.selectbox("Faktor Keutamaan (Ie)", 
+                              options=[1.0, 1.5], 
+                              format_func=lambda x: f"Ie={x} (Rumah/RS)")
+    
+    Wt = st.number_input("Berat Seismik Wt [kN]", 5000.0)
+    
+    if st.button("HITUNG BASE SHEAR (V)"):
+        # Logika: Sds = 2/3 Ss (Simplified)
+        # V = (Sds * Ie / R) * Wt
         Sds = 0.666 * Ss
-        V = (Sds/8) * Wt # Original JS logic
-        st.markdown(f'<div class="res-box">SDS: {Sds:.2f} <br> Base Shear V: <span class="res-val">{V:.0f} kN</span></div>', unsafe_allow_html=True)
+        V = (Sds * Ie_val / R_val) * Wt 
+        
+        st.markdown(f"""
+        <div class="res-box">
+            <div>SDS: <span class="res-val">{Sds:.2f}</span></div>
+            <div>Koefisien Gempa (Cs): <span class="res-val">{(Sds*Ie_val/R_val):.4f}</span></div>
+            <hr>
+            <div>Base Shear V: <span class="res-val">{V:.0f} kN</span></div>
+        </div>""", unsafe_allow_html=True)
 
 elif module == "6. Drift & Simpangan":
-    st.header("6. Drift")
-    hs = st.number_input("Tinggi (mm)", 4000.0)
+    st.header("6. Drift & Simpangan")
+    hs = st.number_input("Tinggi Tingkat (mm)", 4000.0)
     de = st.number_input("Simpangan Elastis (mm)", 15.0)
-    if st.button("CEK"):
+    if st.button("CEK DRIFT"):
+        # Asumsi Cd approx 5.5
         d = 5.5 * de
         allow = 0.02 * hs
         stat = "AMAN" if d < allow else "BAHAYA"
-        st.markdown(f'<div class="res-box">Drift: {d:.1f} mm <br> Status: <span class="badge-ok">{stat}</span></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="res-box">Simpangan (δ): {d:.1f} mm <br> Ijin (0.02H): {allow:.1f} mm <br> Status: <span class="badge-ok">{stat}</span></div>', unsafe_allow_html=True)
 
 elif module == "7. Eksentrisitas":
     st.header("7. Eksentrisitas")
-    B = st.number_input("Lebar B", 15.0)
+    B = st.number_input("Lebar B (m)", 15.0)
     Pm = st.number_input("Pusat Massa", 7.5)
     Pk = st.number_input("Pusat Kaku", 7.0)
     if st.button("HITUNG"):
         e = abs(Pm - Pk)
-        ed = 1.5*e + 0.05*B
-        st.markdown(f'<div class="res-box">e Bawaan: {e:.2f} <br> e Desain: <span class="res-val">{ed:.2f}</span></div>', unsafe_allow_html=True)
+        ed = 0.05 * B # Accidental Torsion SNI
+        st.markdown(f'<div class="res-box">e Bawaan: {e:.2f} m <br> e Aksidental (0.05B): <span class="res-val">{ed:.2f} m</span></div>', unsafe_allow_html=True)
 
 # --- C. STRUKTUR ATAS ---
 elif module == "8. Pelat Lantai":
     st.header("8. Pelat Lantai")
-    lx = st.number_input("Lx (m)", 3.0)
-    qp = st.number_input("Beban Total (kg/m2)", 600.0)
-    if st.button("HITUNG"):
-        M = 0.001 * qp * lx**2 * 25
-        st.markdown(f'<div class="res-box">Momen Lap: <span class="res-val">{M/100:.2f} kNm</span></div>', unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    lx = c1.number_input("Lx [m]", 3.0)
+    ly = c2.number_input("Ly [m]", 4.0)
+    qp = st.number_input("Beban Total [kg/m²]", 600.0)
+    if st.button("HITUNG MOMEN"):
+        Mlx = 0.001 * qp * (lx**2) * 25 # Coeff PBI
+        st.markdown(f'<div class="res-box">Momen Lap (Mlx): <span class="res-val">{(Mlx/100):.2f} kNm</span> <br> Tulangan: D8-150</div>', unsafe_allow_html=True)
 
 elif module == "9. Lendutan Pelat":
     st.header("9. Lendutan Pelat")
-    Lx = st.number_input("Lx (cm)", 300.0)
+    Lx = st.number_input("Bentang Lx (cm)", 300.0)
     h = st.number_input("Tebal h (cm)", 12.0)
-    if st.button("CEK"):
-        hmin = Lx/27
+    if st.button("CEK SYARAT"):
+        hmin = Lx / 28 # SNI approx
         stat = "OK" if h >= hmin else "LENDUT"
         st.markdown(f'<div class="res-box">h min: {hmin:.1f} cm <br> Status: {stat}</div>', unsafe_allow_html=True)
 
 elif module == "10. Desain Balok":
-    st.header("10. Desain Balok")
-    b = st.number_input("b (mm)", 300.0)
-    h = st.number_input("h (mm)", 600.0)
+    st.header("10. Desain Balok (SNI Presisi)")
+    c1, c2 = st.columns(2)
+    fc = c1.number_input("fc' (MPa)", 25.0)
+    fy = c2.number_input("fy (MPa)", 400.0)
+    c3, c4 = st.columns(2)
+    b = c3.number_input("b (mm)", 300.0)
+    h = c4.number_input("h (mm)", 600.0)
     Mu = st.number_input("Mu (kNm)", 150.0)
-    if st.button("HITUNG"):
+    
+    if st.button("HITUNG TULANGAN"):
         Mn = Mu * 1e6 / 0.9
-        Rn = Mn / (b * (h-50)**2)
-        rho = Rn / 350
-        st.markdown(f'<div class="res-box">Rho Perlu: {rho:.4f} <br> Tulangan: <span class="res-val">3 D16</span></div>', unsafe_allow_html=True)
+        d = h - 50
+        Rn = Mn / (b * d**2)
+        m = fy / (0.85 * fc)
+        rho = (1/m) * (1 - math.sqrt(1 - (2*m*Rn)/fy))
+        As = rho * b * d
+        st.markdown(f"""
+        <div class="res-box">
+            <div>Rn: {Rn:.2f} MPa</div>
+            <div>Rho Perlu: <span class="res-val">{rho:.5f}</span></div>
+            <div>As Perlu: <span class="res-val">{As:.0f} mm²</span></div>
+        </div>""", unsafe_allow_html=True)
 
 elif module == "11. Torsi Balok":
     st.header("11. Torsi Balok")
     Tu = st.number_input("Tu (kNm)", 10.0)
     Tcr = st.number_input("Tcr (kNm)", 15.0)
-    if st.button("CEK"):
-        stat = "ABAIKAN" if Tu < 0.25*Tcr else "HITUNG"
+    if st.button("CEK TORSI"):
+        stat = "ABAIKAN" if Tu < 0.25*Tcr else "HITUNG TULANGAN"
         st.markdown(f'<div class="res-box">Status: <span class="res-val">{stat}</span></div>', unsafe_allow_html=True)
 
 elif module == "12. Desain Kolom":
     st.header("12. Desain Kolom")
-    b = st.number_input("b (mm)", 500.0)
-    h = st.number_input("h (mm)", 500.0)
+    c1, c2 = st.columns(2)
+    fc = c1.number_input("fc' (MPa)", 30.0)
+    fy = c2.number_input("fy (MPa)", 400.0)
+    c3, c4 = st.columns(2)
+    b = c3.number_input("b (mm)", 500.0)
+    h = c4.number_input("h (mm)", 500.0)
     Pu = st.number_input("Pu (kN)", 2500.0)
-    if st.button("CEK"):
+    
+    if st.button("CEK KAPASITAS"):
         Ag = b*h
-        Pn = 0.65 * 0.8 * (0.85*30*Ag + 400*0.01*Ag)
-        Pn_kn = Pn / 1000
-        stat = "AMAN" if Pn_kn > Pu else "BAHAYA"
-        st.markdown(f'<div class="res-box">Kapasitas: {Pn_kn:.0f} kN <br> Status: <span class="badge-ok">{stat}</span></div>', unsafe_allow_html=True)
+        Ast = 0.01 * Ag
+        Pn = 0.85 * fc * (Ag - Ast) + fy * Ast
+        phiPn = 0.65 * 0.8 * Pn / 1000
+        stat = "AMAN" if phiPn > Pu else "BAHAYA"
+        st.markdown(f'<div class="res-box">Kapasitas φPn: <span class="res-val">{phiPn:.0f} kN</span> <br> Status: {stat}</div>', unsafe_allow_html=True)
 
 elif module == "13. Shear Wall":
     st.header("13. Shear Wall")
+    fc = st.number_input("fc' (MPa)", 30.0)
     lw = st.number_input("lw (mm)", 4000.0)
+    tw = st.number_input("tebal (mm)", 250.0)
     Vu = st.number_input("Vu (kN)", 1500.0)
-    if st.button("CEK"):
-        Vc = 0.17 * math.sqrt(25) * lw * 250
+    if st.button("CEK GESER"):
+        Vc = 0.17 * math.sqrt(fc) * tw * (0.8*lw)
         phiVc = 0.75 * Vc / 1000
         stat = "OK" if phiVc > Vu else "FAIL"
-        st.markdown(f'<div class="res-box">phiVc: {phiVc:.0f} kN <br> Status: {stat}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="res-box">φVc: {phiVc:.0f} kN <br> Status: {stat}</div>', unsafe_allow_html=True)
 
 elif module == "14. Desain Tangga":
     st.header("14. Tangga")
@@ -425,136 +500,149 @@ elif module == "14. Desain Tangga":
 # --- D. PONDASI DANGKAL ---
 elif module == "15. Pondasi Telapak":
     st.header("15. Pondasi Telapak")
-    P = st.number_input("P (Ton)", 50.0)
-    M = st.number_input("M (tm)", 5.0)
-    A = st.number_input("A (m2)", 4.0)
-    if st.button("HITUNG"):
+    P = st.number_input("P [Ton]", 50.0)
+    M = st.number_input("M [tm]", 5.0)
+    A = st.number_input("A [m²]", 4.0)
+    if st.button("HITUNG TEGANGAN"):
         W = A * math.sqrt(A) / 6
         s1 = P/A + M/W
         s2 = P/A - M/W
-        st.markdown(f'<div class="res-box">Max: {s1:.2f} <br> Min: {s2:.2f}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="res-box">σ Max: {s1:.2f} <br> σ Min: {s2:.2f}</div>', unsafe_allow_html=True)
 
 elif module == "16. Pondasi Lajur":
     st.header("16. Pondasi Lajur")
-    q = st.number_input("q (t/m)", 15.0)
-    B = st.number_input("B (m)", 1.0)
+    q = st.number_input("q [t/m]", 15.0)
+    B = st.number_input("B [m]", 1.0)
     if st.button("HITUNG"):
-        st.markdown(f'<div class="res-box">Tegangan: {q/B:.2f} t/m2</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="res-box">Tegangan: {q/B:.2f} t/m²</div>', unsafe_allow_html=True)
 
 elif module == "17. Sloof (Tie Beam)":
     st.header("17. Sloof")
-    q = st.number_input("Beban (kg/m)", 1000.0)
-    L = st.number_input("Bentang (m)", 6.0)
+    q = st.number_input("Beban [kg/m]", 1000.0)
+    L = st.number_input("Bentang [m]", 6.0)
     if st.button("HITUNG"):
         st.markdown(f'<div class="res-box">Mu: {0.1*q*L**2:.0f} kgm</div>', unsafe_allow_html=True)
 
 elif module == "18. Pelat Westergaard":
     st.header("18. Westergaard")
-    P = st.number_input("P (kg)", 3000.0)
-    h = st.number_input("h (cm)", 20.0)
+    P = st.number_input("Beban Roda [kg]", 3000.0)
+    h = st.number_input("Tebal h [cm]", 20.0)
     if st.button("HITUNG"):
         sig = 3*P / h**2
-        stat = "AMAN" if sig < 30 else "FAIL"
-        st.markdown(f'<div class="res-box">Tegangan: {sig:.1f} <br> Status: {stat}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="res-box">Tegangan: <span class="res-val">{sig:.1f} kg/cm²</span></div>', unsafe_allow_html=True)
 
 # --- E. PONDASI DALAM ---
 elif module == "19. Pile Cap & Pons":
-    st.header("19. Pile Cap")
+    st.header("19. Pile Cap & Pons")
+    fc = st.number_input("fc' (MPa)", 25.0)
     Pu = st.number_input("Pu (kN)", 2000.0)
-    h = st.number_input("h (mm)", 600.0)
-    c = st.number_input("c (mm)", 500.0)
-    if st.button("CEK"):
+    h = st.number_input("h Pilecap (mm)", 600.0)
+    c = st.number_input("Lebar Kolom (mm)", 500.0)
+    if st.button("CEK PONS"):
         d = h - 80
         bo = 4*(c+d)
-        Vc = 0.33 * math.sqrt(25) * bo * d
+        Vc = 0.33 * math.sqrt(fc) * bo * d
         phiVc = 0.75 * Vc / 1000
         stat = "AMAN" if phiVc > Pu else "JEBOL"
-        st.markdown(f'<div class="res-box">phiVc: {phiVc:.0f} kN <br> Status: {stat}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="res-box">φVc: {phiVc:.0f} kN <br> Status: {stat}</div>', unsafe_allow_html=True)
 
 elif module == "20. Meyerhof (Daya Dukung)":
-    st.header("20. Meyerhof")
+    st.header("20. Meyerhof (N-SPT)")
     Nb = st.number_input("Nb", 40.0)
     Nav = st.number_input("Nav", 15.0)
     D = st.number_input("D (cm)", 40.0)
-    if st.button("HITUNG"):
+    L = st.number_input("L (m)", 12.0)
+    if st.button("HITUNG Qall"):
         Ab = 0.25 * math.pi * (D/100)**2
-        Q = (40 * Nb * Ab + 0.2 * Nav * 10) / 3
-        st.markdown(f'<div class="res-box">Q Ijin: <span class="res-val">{Q:.1f} Ton</span></div>', unsafe_allow_html=True)
+        As = math.pi * (D/100) * L
+        Qult = 40*Nb*Ab + 0.2*Nav*As # Empiris
+        st.markdown(f'<div class="res-box">Q Ultimate: {Qult:.1f} Ton <br> Q Ijin (FK=3): <span class="res-val">{Qult/3:.1f} Ton</span></div>', unsafe_allow_html=True)
 
 elif module == "21. Momen Tiang":
     st.header("21. Momen Tiang")
-    D = st.number_input("D (m)", 0.4)
-    Cr = st.number_input("Cr (kg/cm2)", 50.0)
-    if st.button("HITUNG"):
+    D = st.number_input("Diameter D [m]", 0.4)
+    Cr = st.number_input("Cr Beton [kg/cm²]", 250.0)
+    if st.button("HITUNG KAPASITAS"):
         M = 140 * Cr * D**2
-        st.markdown(f'<div class="res-box">Mn: {M:.0f} kgm</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="res-box">Mn Approx: <span class="res-val">{M:.0f} kgm</span></div>', unsafe_allow_html=True)
 
 elif module == "22. Lateral Tiang":
-    st.header("22. Lateral")
-    H = st.number_input("H Total (kg)", 4300.0)
-    n = st.number_input("n", 3)
-    if st.button("HITUNG"):
-        st.markdown(f'<div class="res-box">H per Tiang: {safe_div(H,n):.0f} kg</div>', unsafe_allow_html=True)
+    st.header("22. Lateral Tiang")
+    H = st.number_input("H Total [kg]", 4300.0)
+    n = st.number_input("Jumlah Tiang", 3)
+    if st.button("CEK"):
+        st.markdown(f'<div class="res-box">H per Tiang: {H/n:.0f} kg</div>', unsafe_allow_html=True)
 
 elif module == "23. Kalendering Hiley":
-    st.header("23. Hiley")
-    W = st.number_input("W Hammer (t)", 2.0)
+    st.header("23. Hiley Formula")
+    W = st.number_input("W Hammer (Ton)", 2.0)
     H = st.number_input("H Jatuh (cm)", 100.0)
-    S = st.number_input("S (mm)", 5.0)
-    K = st.number_input("K (mm)", 10.0)
-    if st.button("HITUNG"):
-        R = (0.5 * W * H) / (S/10 + K/10/2)
-        st.markdown(f'<div class="res-box">R Ijin: <span class="res-val">{R:.1f} Ton</span></div>', unsafe_allow_html=True)
+    S = st.number_input("Set (mm)", 5.0)
+    K = st.number_input("Rebound (mm)", 10.0)
+    ef = st.selectbox("Efisiensi", [0.75, 0.9, 1.0])
+    if st.button("HITUNG R"):
+        R = (ef * W * H) / (S/10 + K/10/2)
+        st.markdown(f'<div class="res-box">R Ultimate: {R:.1f} Ton <br> R Ijin: <span class="res-val">{R/3:.1f} Ton</span></div>', unsafe_allow_html=True)
 
 elif module == "24. Efisiensi Grup":
     st.header("24. Efisiensi Grup")
-    m = st.number_input("m", 3)
-    n = st.number_input("n", 2)
+    m = st.number_input("Baris m", 3)
+    n = st.number_input("Baris n", 2)
+    D = st.number_input("D (cm)", 40.0)
+    s = st.number_input("s (cm)", 120.0)
     if st.button("HITUNG"):
-        eg = 1 - math.degrees(math.atan(0.4/1.2))/90 * ((n*(m-1)+m*(n-1))/(m*n))
-        st.markdown(f'<div class="res-box">Eg: {eg:.3f}</div>', unsafe_allow_html=True)
+        deg = math.degrees(math.atan(D/s))
+        eg = 1 - deg/90 * ((n*(m-1)+m*(n-1))/(m*n))
+        st.markdown(f'<div class="res-box">Efisiensi: <span class="res-val">{eg:.3f}</span></div>', unsafe_allow_html=True)
 
 elif module == "25. Cek Cabut (Uplift)":
     st.header("25. Uplift")
-    T = st.number_input("Tarik (t)", 50.0)
-    W = st.number_input("Berat (t)", 15.0)
-    n = st.number_input("n", 4)
+    T = st.number_input("Tarik Total (Ton)", 50.0)
+    W = st.number_input("Berat Sendiri (Ton)", 15.0)
+    n = st.number_input("Jumlah Tiang", 4)
     if st.button("CEK"):
         t1 = (T-W)/n
         stat = "AMAN" if t1 < 10 else "BAHAYA"
-        st.markdown(f'<div class="res-box">Tarik/Tiang: {t1:.1f} t <br> Status: {stat}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="res-box">Tarik per Tiang: {t1:.1f} Ton <br> Status: {stat}</div>', unsafe_allow_html=True)
 
 # --- F. STRUKTUR KHUSUS ---
 elif module == "26. Retaining Wall":
     st.header("26. Retaining Wall")
-    H = st.number_input("H (m)", 3.5)
+    H = st.number_input("Tinggi H (m)", 3.5)
     phi = st.number_input("Sudut Geser", 30.0)
+    gamma = st.number_input("Berat Jenis Tanah (kN/m3)", 18.0)
     if st.button("HITUNG"):
-        Ka = math.tan(math.radians(45 - phi/2))**2
-        Pa = 0.5 * 18 * H**2 * Ka
+        Ka = math.tan(math.radians(45-phi/2))**2
+        Pa = 0.5 * gamma * H**2 * Ka
         st.markdown(f'<div class="res-box">Ka: {Ka:.3f} <br> Pa: <span class="res-val">{Pa:.1f} kN/m</span></div>', unsafe_allow_html=True)
 
 elif module == "27. Kolam / Tandon":
     st.header("27. Kolam")
     H = st.number_input("Tinggi Air (m)", 3.0)
     if st.button("HITUNG"):
-        st.markdown(f'<div class="res-box">Momen: {(1/6)*10*H**3:.1f} kNm</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="res-box">Momen: <span class="res-val">{(1/6)*10*H**3:.1f} kNm</span></div>', unsafe_allow_html=True)
 
 elif module == "28. Jembatan":
-    st.header("28. Jembatan")
-    L = st.number_input("L (m)", 10.0)
-    t = st.number_input("t (m)", 0.2)
-    q = st.number_input("D (kN/m)", 22.0)
-    P = st.number_input("P (kN)", 44.0)
-    if st.button("HITUNG"):
-        qDL = t*24 + 0.05*22
-        M = 1.8 * (0.125*(q+qDL)*L**2 + 0.25*P*L)
-        st.markdown(f'<div class="res-box">Momen Ultimate: <span class="res-val">{M:.1f} kNm</span></div>', unsafe_allow_html=True)
+    st.header("28. Jembatan Sederhana")
+    st.caption("Ref: SNI 1725:2016")
+    L = st.number_input("Bentang L (m)", 10.0)
+    t = st.number_input("Tebal Pelat (m)", 0.2)
+    ta = st.number_input("Aspal (m)", 0.05)
+    qD = st.number_input("Beban Jalur D (kN/m)", 9.0)
+    PT = st.number_input("Beban Truk T (kN)", 112.5)
+    
+    if st.button("HITUNG TOTAL"):
+        qDL = t*24 + ta*22
+        Mu_DL = 1.3 * (1/8) * qDL * L**2
+        Mu_Lane = 1.8 * (1/8) * qD * L**2
+        Mu_Truck = 1.8 * (1/4) * PT * L
+        M_tot = Mu_DL + Mu_Lane + Mu_Truck
+        st.markdown(f'<div class="res-box">Berat Sendiri: {qDL:.1f} kN/m <br> Momen Ultimate: <span class="res-val">{M_tot:.1f} kNm</span></div>', unsafe_allow_html=True)
 
 elif module == "29. Konversi Tulangan":
-    st.header("29. Konversi Tulangan")
-    D = st.number_input("D (mm)", 10.0)
-    s = st.number_input("s (mm)", 150.0)
+    st.header("29. Konversi BRC")
+    D = st.number_input("D Ulir (mm)", 10.0)
+    s = st.number_input("Jarak s (mm)", 150.0)
     if st.button("KONVERSI"):
         As = 0.25 * math.pi * D**2 * 1000/s
         sbrc = (28.3*1000) / (As * (240/500))
