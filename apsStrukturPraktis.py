@@ -8,7 +8,7 @@ import matplotlib.patches as patches
 # 1. KONFIGURASI HALAMAN & CSS
 # ==========================================
 st.set_page_config(
-    page_title="Smart_Engineer OMNI-X",
+    page_title="Smart_Engineer OMNI-X (Pro)",
     page_icon="🏗️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -132,14 +132,90 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. FUNGSI BANTUAN TEKNIS & VISUALISASI
+# 2. FUNGSI BANTUAN TEKNIS & VISUALISASI (UPDATED SNI)
 # ==========================================
+
 def safe_div(n, d, default=0.0):
     return n / d if d != 0 else default
 
 def get_steel_area(diameter):
     """Luas penampang 1 batang tulangan (mm2)"""
     return 0.25 * math.pi * (diameter**2)
+
+# --- NEW: FUNGSI GEMPA SNI 1726:2019 (INTERPOLASI) ---
+def get_site_coefficients(site_class, Ss, S1):
+    """
+    Menghitung Fa dan Fv berdasarkan Tabel 6 & 7 SNI 1726:2019
+    Menggunakan Interpolasi Linear untuk nilai di antara.
+    """
+    def interp(x, x1, x2, y1, y2):
+        return y1 + (x - x1) * (y2 - y1) / (x2 - x1)
+
+    # Tabel Fa (Tabel 6)
+    fa_table = {
+        "SA": [0.8, 0.8, 0.8, 0.8, 0.8],
+        "SB": [1.0, 1.0, 1.0, 1.0, 1.0],
+        "SC": [1.2, 1.2, 1.1, 1.0, 1.0],
+        "SD": [1.6, 1.4, 1.2, 1.1, 1.0],
+        "SE": [2.5, 1.7, 1.2, 0.9, 0.9],
+        "SF": [None, None, None, None, None]
+    }
+    
+    # Tabel Fv (Tabel 7)
+    fv_table = {
+        "SA": [0.8, 0.8, 0.8, 0.8, 0.8],
+        "SB": [1.0, 1.0, 1.0, 1.0, 1.0],
+        "SC": [1.7, 1.6, 1.5, 1.4, 1.3],
+        "SD": [2.4, 2.0, 1.8, 1.6, 1.5],
+        "SE": [3.5, 3.2, 2.8, 2.4, 2.4],
+        "SF": [None, None, None, None, None]
+    }
+
+    # Hitung Fa
+    vals_fa = fa_table.get(site_class)
+    if not vals_fa or vals_fa[0] is None: return None, None
+    
+    if Ss <= 0.25: Fa = vals_fa[0]
+    elif Ss <= 0.50: Fa = interp(Ss, 0.25, 0.50, vals_fa[0], vals_fa[1])
+    elif Ss <= 0.75: Fa = interp(Ss, 0.50, 0.75, vals_fa[1], vals_fa[2])
+    elif Ss <= 1.00: Fa = interp(Ss, 0.75, 1.00, vals_fa[2], vals_fa[3])
+    elif Ss < 1.25:  Fa = interp(Ss, 1.00, 1.25, vals_fa[3], vals_fa[4])
+    else: Fa = vals_fa[4]
+
+    # Hitung Fv
+    vals_fv = fv_table.get(site_class)
+    if S1 <= 0.1: Fv = vals_fv[0]
+    elif S1 <= 0.2: Fv = interp(S1, 0.1, 0.2, vals_fv[0], vals_fv[1])
+    elif S1 <= 0.3: Fv = interp(S1, 0.2, 0.3, vals_fv[1], vals_fv[2])
+    elif S1 <= 0.4: Fv = interp(S1, 0.3, 0.4, vals_fv[2], vals_fv[3])
+    elif S1 < 0.5:  Fv = interp(S1, 0.4, 0.5, vals_fv[3], vals_fv[4])
+    else: Fv = vals_fv[4]
+
+    return Fa, Fv
+
+# --- NEW: FUNGSI BETON SNI 2847:2019 (PHI DINAMIS) ---
+def get_beta1(fc):
+    if fc <= 28: return 0.85
+    elif fc >= 55: return 0.65
+    else: return 0.85 - 0.05 * (fc - 28) / 7
+
+def calculate_phi_moment(d, c, ty_strain=0.002, spiral=False):
+    """Menghitung Phi berdasarkan Regangan Netto (Strain)"""
+    if c <= 0: return 0.90, 0.0, "Terkendali Tarik" # Safety check
+    
+    dt = d # Asumsi satu lapis tulangan tarik
+    epsilon_t = 0.003 * (dt - c) / c
+    
+    if epsilon_t >= 0.005:
+        return 0.90, epsilon_t, "Terkendali Tarik (Aman)"
+    elif epsilon_t <= ty_strain:
+        phi = 0.75 if spiral else 0.65
+        return phi, epsilon_t, "Terkendali Tekan (Getas!)"
+    else:
+        # Zona Transisi
+        phi_min = 0.75 if spiral else 0.65
+        phi = phi_min + (epsilon_t - ty_strain) * (0.25 / (0.005 - ty_strain))
+        return phi, epsilon_t, "Zona Transisi"
 
 # --- FUNGSI GAMBAR (VISUALISASI) ---
 def draw_beam_section(b, h, n_top, n_bottom, diameter_main, diameter_stirrup, title="Detail Balok"):
@@ -321,7 +397,7 @@ if category == "🏠 DASHBOARD":
     col1, col2 = st.columns(2)
     with col1:
         st.success("✅ **Status: SIAP (29 Modul)**")
-        st.write("Fitur: Analisis SNI, Auto-Detailing, & Visualisasi.")
+        st.write("Fitur: Analisis SNI Terupdate, Auto-Detailing, & Visualisasi.")
     with col2:
         st.info("ℹ️ **Tips:**")
         st.write("Pilih modul di sidebar kiri untuk memulai perhitungan.")
@@ -405,18 +481,60 @@ elif module == "4. Pusat Massa (COG)":
 
 # --- B. GEMPA ---
 elif module == "5. Respon Spektrum":
-    st.header("5. Gempa SNI 1726")
-    c1, c2 = st.columns(2)
-    Ss = c1.number_input("Ss", 0.9)
-    S1 = c2.number_input("S1", 0.4)
-    with c1: R_val = st.selectbox("Sistem R", [8, 5, 3])
-    with c2: Ie_val = st.selectbox("Faktor Ie", [1.0, 1.5])
-    Wt = st.number_input("Wt (kN)", 5000.0)
+    # UPDATED: MENGGUNAKAN LOGIKA SNI 1726:2019 (INTERPOLASI SITE CLASS)
+    st.header("5. Gempa SNI 1726:2019 (High Precision)")
     
-    if st.button("HITUNG"):
-        Sds = 0.666 * Ss
-        V = (Sds * Ie_val / R_val) * Wt 
-        st.markdown(f'<div class="res-box">SDS: {Sds:.2f} <br> Base Shear V: <span class="res-val">{V:.0f} kN</span></div>', unsafe_allow_html=True)
+    col_t1, col_t2 = st.columns(2)
+    with col_t1:
+        site_class = st.selectbox("Kelas Situs (Tanah)", ["SA", "SB", "SC", "SD", "SE"])
+        Ss = st.number_input("Ss (Peta Gempa)", value=0.9, format="%.3f")
+    with col_t2:
+        R_val = st.selectbox("Sistem R", [8, 5, 3], index=0) # SRPMK default
+        S1 = st.number_input("S1 (Peta Gempa)", value=0.4, format="%.3f")
+    
+    Ie_val = st.selectbox("Faktor Keutamaan (Ie)", [1.0, 1.25, 1.5])
+    Wt = st.number_input("Berat Seismik Wt (kN)", 5000.0)
+    
+    if st.button("HITUNG RESPON SPEKTRUM"):
+        # 1. Hitung Fa dan Fv (NEW ENGINE)
+        Fa, Fv = get_site_coefficients(site_class, Ss, S1)
+        
+        if Fa is not None:
+            # 2. Hitung SMS, SM1, SDS, SD1
+            Sms = Fa * Ss
+            Sm1 = Fv * S1
+            Sds = (2/3) * Sms
+            Sd1 = (2/3) * Sm1
+            
+            # 3. Hitung Base Shear (V)
+            # Batas Periode Pendek (Cs Max)
+            Cs_calc = Sds / (R_val / Ie_val)
+            V = Cs_calc * Wt
+            
+            # Tampilkan Hasil Lengkap
+            st.success("✅ Perhitungan Selesai sesuai SNI 1726:2019")
+            
+            col_res1, col_res2 = st.columns(2)
+            with col_res1:
+                st.markdown(f"""
+                <div class="res-box">
+                    <div class="res-label">Koefisien Situs:</div>
+                    <div>Fa = <b>{Fa:.3f}</b> | Fv = <b>{Fv:.3f}</b></div>
+                    <hr>
+                    <div class="res-label">Parameter Desain:</div>
+                    <div>SDS = <span class="res-val">{Sds:.3f} g</span></div>
+                    <div>SD1 = <span class="res-val">{Sd1:.3f} g</span></div>
+                </div>""", unsafe_allow_html=True)
+            
+            with col_res2:
+                 st.markdown(f"""
+                <div class="res-box" style="border-left: 8px solid #2E7D32;">
+                    <div class="res-label">Gaya Geser Dasar (V):</div>
+                    <div class="res-val">{V:,.0f} kN</div>
+                    <div style="font-size:0.8rem; margin-top:5px;">(Asumsi Perioda Pendek)</div>
+                </div>""", unsafe_allow_html=True)
+        else:
+            st.error("Kelas Situs SF memerlukan investigasi geoteknik khusus!")
 
 elif module == "6. Drift & Simpangan":
     st.header("6. Drift")
@@ -479,54 +597,87 @@ elif module == "9. Lendutan Pelat":
         st.markdown(f'<div class="res-box">h min: {hmin:.1f} cm <br> Status: {stat}</div>', unsafe_allow_html=True)
 
 elif module == "10. Desain Balok":
-    st.header("10. Desain Balok (Auto-Detailing & Visualisasi)")
+    # UPDATED: MENGGUNAKAN LOGIKA SNI 2847:2019 (PHI DINAMIS)
+    st.header("10. Desain Balok (Strain-Based Approach)")
+    
     c1, c2 = st.columns(2)
     fc = c1.number_input("fc' (MPa)", 25.0)
     fy = c2.number_input("fy (MPa)", 400.0)
+    
     c3, c4 = st.columns(2)
     b = c3.number_input("b (mm)", 300.0)
     h = c4.number_input("h (mm)", 600.0)
     Mu = st.number_input("Mu (kNm)", 150.0)
+    ds = st.number_input("Decking (mm)", 40.0) # Selimut beton + sengkang + 1/2 db
     
-    if st.button("HITUNG & DESAIN"):
-        Mn = Mu * 1e6 / 0.9
-        d = h - 50
-        Rn = Mn / (b * d**2)
-        m = fy / (0.85 * fc)
+    if st.button("DESAIN & CEK PHI"):
+        d = h - ds
+        
+        # 1. Hitung Beta 1 Dinamis
+        beta1 = get_beta1(fc)
+        
+        # 2. Iterasi Mencari As Perlu (Trial Awal)
+        phi_trial = 0.9
+        Mu_Nmm = Mu * 1e6
         
         try:
+            # Rn perlu dengan phi trial
+            Mn_trial = Mu_Nmm / phi_trial
+            Rn = Mn_trial / (b * d**2)
+            m = fy / (0.85 * fc)
+            
+            # Rho Perlu
             rho = (1/m) * (1 - math.sqrt(1 - (2*m*Rn)/fy))
-            rho_min = 1.4/fy
-            if rho < rho_min: rho = rho_min
+            As_req = rho * b * d
             
-            As = rho * b * d
-            tulangan_utama = auto_design_beam(As, b)
+            # 3. Hitung Tinggi Blok Tekan (a) dan Garis Netral (c) Aktual
+            a_actual = (As_req * fy) / (0.85 * fc * b)
+            c_actual = a_actual / beta1
+            
+            # 4. CEK PHI SEBENARNYA (Validasi SNI)
+            phi_fix, epsilon_t, status_str = calculate_phi_moment(d, c_actual)
+            
+            # Update Kapasitas dengan Phi Fix
+            Mn_final = As_req * fy * (d - a_actual/2)
+            Mu_capacity = phi_fix * Mn_final / 1e6
+            
+            # Visualisasi Tulangan
+            tulangan_utama = auto_design_beam(As_req, b)
             sengkang = get_practical_stirrup(h)
-            
-            # Parsing untuk Visualisasi
-            try:
-                parts = tulangan_utama.split(' D')
-                n_bars = int(parts[0])
-                d_bars = int(parts[1])
-            except:
-                n_bars = 4; d_bars = 16
 
+            st.success(f"✅ Analisis Selesai: {status_str}")
+            
             col_res, col_img = st.columns([1.5, 1])
             with col_res:
                 st.markdown(f"""
                 <div class="res-box">
-                    <div>Rn: {Rn:.2f} MPa</div>
+                    <div><b>Analisis Penampang:</b></div>
+                    <div>Beta1: {beta1:.2f} | c: {c_actual:.1f} mm</div>
+                    <div>Regangan Baja (εt): <b>{epsilon_t:.4f}</b></div>
+                    <div>Faktor Reduksi (φ): <b>{phi_fix:.3f}</b></div>
+                    <hr>
                     <div class="steel-res">
-                        <div>As Perlu: {As:.0f} mm² (ρ = {rho:.4f})</div>
-                        <div>Tulangan Utama: <span class="res-steel">{tulangan_utama}</span></div>
-                        <div>Sengkang: <span class="res-val">{sengkang}</span></div>
+                        <div>As Perlu: {As_req:.0f} mm²</div>
+                        <div>Tulangan: <span class="res-steel">{tulangan_utama}</span></div>
+                        <div>Kapasitas (φMn): {Mu_capacity:.1f} kNm</div>
                     </div>
                 </div>""", unsafe_allow_html=True)
+                
+                if phi_fix < 0.9:
+                    st.warning(f"⚠️ PERHATIAN: Balok tidak terkendali tarik penuh (φ={phi_fix:.2f}). Struktur mungkin kurang daktail.")
+            
             with col_img:
+                parts = tulangan_utama.split(' D')
+                try:
+                    n_bars = int(parts[0])
+                    d_bars = int(parts[1])
+                except:
+                    n_bars = 4; d_bars = 16
                 fig = draw_beam_section(b, h, 2, n_bars, d_bars, 8)
                 st.pyplot(fig)
-        except:
-            st.error("Penampang Balok Terlalu Kecil!")
+
+        except ValueError:
+            st.error("❌ Penampang terlalu kecil! Terjadi keruntuhan tekan sebelum tarik (Over-Reinforced). Perbesar dimensi balok.")
 
 elif module == "11. Torsi Balok":
     st.header("11. Torsi Balok")
