@@ -8,150 +8,91 @@ import matplotlib.patches as patches
 # 1. KONFIGURASI HALAMAN & CSS
 # ==========================================
 st.set_page_config(
-    page_title="Smart_Engineer OMNI-X (Pro)",
+    page_title="Smart_Engineer OMNI-X (Integrated)",
     page_icon="🏗️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS: Sidebar Putih, Teks Hitam, Footer Merah
+# Inisialisasi Session State (Tas Data Global)
+if 'global_Wt' not in st.session_state: st.session_state['global_Wt'] = 5000.0
+if 'global_V' not in st.session_state: st.session_state['global_V'] = 1500.0
+if 'global_fc' not in st.session_state: st.session_state['global_fc'] = 25.0
+if 'global_fy' not in st.session_state: st.session_state['global_fy'] = 400.0
+
+# Custom CSS
 st.markdown("""
     <style>
-    /* Main Background */
     .stApp { background-color: #F8F9FA; }
     
-    /* --- SIDEBAR STYLING --- */
-    section[data-testid="stSidebar"] {
-        background-color: #FFFFFF !important;
-        border-right: 1px solid #E0E0E0;
-    }
-    
-    /* Memaksa Semua Teks di Sidebar Menjadi HITAM */
-    section[data-testid="stSidebar"] * {
-        color: #000000 !important;
-    }
-    
-    /* Styling Input Fields di Sidebar */
-    section[data-testid="stSidebar"] input, 
-    section[data-testid="stSidebar"] select,
-    section[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
-        background-color: #F5F5F5 !important;
-        border: 1px solid #CCCCCC;
-        color: #000000 !important;
+    /* SIDEBAR */
+    section[data-testid="stSidebar"] { background-color: #FFFFFF !important; border-right: 1px solid #E0E0E0; }
+    section[data-testid="stSidebar"] * { color: #000000 !important; }
+    section[data-testid="stSidebar"] input, section[data-testid="stSidebar"] select {
+        background-color: #F5F5F5 !important; border: 1px solid #CCCCCC; color: #000000 !important;
     }
 
-    /* --- MAIN CONTENT STYLING --- */
-    h1, h2, h3 {
-        color: #0D47A1;
-        font-family: 'Segoe UI', sans-serif;
-        font-weight: 800;
-    }
+    /* HEADINGS */
+    h1, h2, h3 { color: #0D47A1; font-family: 'Segoe UI', sans-serif; font-weight: 800; }
     
-    /* Result Box (Card Style) */
+    /* RESULT BOX */
     .res-box {
-        background-color: #FFFFFF;
-        padding: 25px;
-        border-radius: 10px;
-        border-left: 8px solid #FF6F00; /* Amber Accent */
-        margin-top: 20px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        color: #263238;
+        background-color: #FFFFFF; padding: 25px; border-radius: 10px;
+        border-left: 8px solid #FF6F00; margin-top: 20px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05); color: #263238;
     }
     
-    /* Hasil Detailing Besi */
+    /* STEEL RES */
     .steel-res {
-        background-color: #E8F5E9;
-        padding: 15px;
-        border-radius: 8px;
-        margin-top: 15px;
-        border: 1px solid #C8E6C9;
+        background-color: #E8F5E9; padding: 15px; border-radius: 8px;
+        margin-top: 15px; border: 1px solid #C8E6C9;
     }
     
-    .res-label {
-        font-weight: 600;
-        color: #455A64;
-        font-size: 0.95rem;
-        display: block;
-        margin-bottom: 2px;
-    }
+    .res-label { font-weight: 600; color: #455A64; font-size: 0.95rem; display: block; margin-bottom: 2px; }
+    .res-val { font-weight: 800; color: #0D47A1; font-size: 1.3rem; font-family: 'Consolas', monospace; }
+    .res-steel { font-weight: 900; color: #2E7D32; font-size: 1.4rem; font-family: 'Consolas', monospace; }
     
-    .res-val {
-        font-weight: 800;
-        color: #0D47A1;
-        font-size: 1.3rem;
-        font-family: 'Consolas', monospace;
-    }
-
-    .res-steel {
-        font-weight: 900;
-        color: #2E7D32;
-        font-size: 1.4rem;
-        font-family: 'Consolas', monospace;
-    }
-    
-    /* Custom Buttons */
+    /* BUTTONS */
     div.stButton > button {
-        background: linear-gradient(135deg, #0D47A1, #1565C0);
-        color: white;
-        font-weight: bold;
-        border: none;
-        width: 100%;
-        padding: 12px;
-        border-radius: 6px;
-        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #0D47A1, #1565C0); color: white; font-weight: bold; border: none;
+        width: 100%; padding: 12px; border-radius: 6px; transition: all 0.3s ease;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     div.stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(13, 71, 161, 0.2);
-        background: linear-gradient(135deg, #FF6F00, #F57C00);
-        color: white !important;
+        transform: translateY(-2px); box-shadow: 0 5px 15px rgba(13, 71, 161, 0.2);
+        background: linear-gradient(135deg, #FF6F00, #F57C00); color: white !important;
     }
 
-    /* Status Badges */
+    /* BADGES */
     .badge-ok { background-color: #2E7D32; color: white; padding: 5px 12px; border-radius: 15px; font-weight: bold; font-size: 0.85rem;}
     .badge-no { background-color: #C62828; color: white; padding: 5px 12px; border-radius: 15px; font-weight: bold; font-size: 0.85rem;}
-    .badge-warn { background-color: #F9A825; color: #263238; padding: 5px 12px; border-radius: 15px; font-weight: bold; font-size: 0.85rem;}
     
-    /* Footer Styling Specific - MERAH */
+    /* FOOTER */
     .sidebar-footer {
-        text-align: center;
-        margin-top: 30px;
-        padding: 20px;
-        background: #FFEBEE;
-        border-top: 2px solid #FFCDD2;
-        border-radius: 8px;
+        text-align: center; margin-top: 30px; padding: 20px;
+        background: #FFEBEE; border-top: 2px solid #FFCDD2; border-radius: 8px;
     }
     .footer-email { color: #000000 !important; font-weight: bold; font-size: 0.8rem; }
     .footer-donasi { color: #D50000 !important; font-weight: 900; margin-top: 10px; font-size: 0.9rem; text-transform: uppercase; }
     .footer-norek { color: #D50000 !important; font-family: monospace; font-size: 1.1rem; font-weight: 900; letter-spacing: 1px; }
-    
-    /* Chat Bubble Fix */
-    .stChatMessage { background-color: #FFFFFF; border: 1px solid #E0E0E0; }
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. FUNGSI BANTUAN TEKNIS & VISUALISASI (UPDATED SNI)
+# 2. FUNGSI TEKNIS (CORE ENGINE SNI UPDATE)
 # ==========================================
 
 def safe_div(n, d, default=0.0):
     return n / d if d != 0 else default
 
 def get_steel_area(diameter):
-    """Luas penampang 1 batang tulangan (mm2)"""
     return 0.25 * math.pi * (diameter**2)
 
-# --- NEW: FUNGSI GEMPA SNI 1726:2019 (INTERPOLASI) ---
+# --- ENGINE GEMPA SNI 1726:2019 (INTERPOLASI) ---
 def get_site_coefficients(site_class, Ss, S1):
-    """
-    Menghitung Fa dan Fv berdasarkan Tabel 6 & 7 SNI 1726:2019
-    Menggunakan Interpolasi Linear untuk nilai di antara.
-    """
     def interp(x, x1, x2, y1, y2):
         return y1 + (x - x1) * (y2 - y1) / (x2 - x1)
 
-    # Tabel Fa (Tabel 6)
     fa_table = {
         "SA": [0.8, 0.8, 0.8, 0.8, 0.8],
         "SB": [1.0, 1.0, 1.0, 1.0, 1.0],
@@ -161,7 +102,6 @@ def get_site_coefficients(site_class, Ss, S1):
         "SF": [None, None, None, None, None]
     }
     
-    # Tabel Fv (Tabel 7)
     fv_table = {
         "SA": [0.8, 0.8, 0.8, 0.8, 0.8],
         "SB": [1.0, 1.0, 1.0, 1.0, 1.0],
@@ -171,7 +111,6 @@ def get_site_coefficients(site_class, Ss, S1):
         "SF": [None, None, None, None, None]
     }
 
-    # Hitung Fa
     vals_fa = fa_table.get(site_class)
     if not vals_fa or vals_fa[0] is None: return None, None
     
@@ -182,7 +121,6 @@ def get_site_coefficients(site_class, Ss, S1):
     elif Ss < 1.25:  Fa = interp(Ss, 1.00, 1.25, vals_fa[3], vals_fa[4])
     else: Fa = vals_fa[4]
 
-    # Hitung Fv
     vals_fv = fv_table.get(site_class)
     if S1 <= 0.1: Fv = vals_fv[0]
     elif S1 <= 0.2: Fv = interp(S1, 0.1, 0.2, vals_fv[0], vals_fv[1])
@@ -193,17 +131,15 @@ def get_site_coefficients(site_class, Ss, S1):
 
     return Fa, Fv
 
-# --- NEW: FUNGSI BETON SNI 2847:2019 (PHI DINAMIS) ---
+# --- ENGINE BETON SNI 2847:2019 (PHI DINAMIS) ---
 def get_beta1(fc):
     if fc <= 28: return 0.85
     elif fc >= 55: return 0.65
     else: return 0.85 - 0.05 * (fc - 28) / 7
 
 def calculate_phi_moment(d, c, ty_strain=0.002, spiral=False):
-    """Menghitung Phi berdasarkan Regangan Netto (Strain)"""
-    if c <= 0: return 0.90, 0.0, "Terkendali Tarik" # Safety check
-    
-    dt = d # Asumsi satu lapis tulangan tarik
+    if c <= 0: return 0.90, 0.0, "Terkendali Tarik"
+    dt = d 
     epsilon_t = 0.003 * (dt - c) / c
     
     if epsilon_t >= 0.005:
@@ -212,18 +148,15 @@ def calculate_phi_moment(d, c, ty_strain=0.002, spiral=False):
         phi = 0.75 if spiral else 0.65
         return phi, epsilon_t, "Terkendali Tekan (Getas!)"
     else:
-        # Zona Transisi
         phi_min = 0.75 if spiral else 0.65
         phi = phi_min + (epsilon_t - ty_strain) * (0.25 / (0.005 - ty_strain))
         return phi, epsilon_t, "Zona Transisi"
 
-# --- FUNGSI GAMBAR (VISUALISASI) ---
+# --- VISUALISASI ---
 def draw_beam_section(b, h, n_top, n_bottom, diameter_main, diameter_stirrup, title="Detail Balok"):
     fig, ax = plt.subplots(figsize=(4, (h/b)*3.5 if b>0 else 4))
-    # Beton
     concrete = patches.Rectangle((0, 0), b, h, linewidth=2, edgecolor='#555', facecolor='#E0E0E0')
     ax.add_patch(concrete)
-    # Sengkang (Selimut 40mm)
     cover = 40
     stirrup = patches.Rectangle((cover, cover), b-2*cover, h-2*cover, linewidth=2, edgecolor='#D32F2F', facecolor='none', linestyle='--')
     ax.add_patch(stirrup)
@@ -235,14 +168,12 @@ def draw_beam_section(b, h, n_top, n_bottom, diameter_main, diameter_stirrup, ti
     y_bot = cover + diameter_stirrup + diameter_main/2
     y_top = h - (cover + diameter_stirrup + diameter_main/2)
     
-    # Tulangan Bawah
     if n_bottom > 0:
         if n_bottom == 1: draw_bar(b/2, y_bot, diameter_main)
         else:
             spacing = (b - 2*cover - 2*diameter_stirrup - diameter_main) / (n_bottom - 1)
             for i in range(n_bottom):
                 draw_bar(cover + diameter_stirrup + diameter_main/2 + (i * spacing), y_bot, diameter_main)
-    # Tulangan Atas (Min 2)
     n_top = max(n_top, 2) 
     spacing_top = (b - 2*cover - 2*diameter_stirrup - diameter_main) / (n_top - 1)
     for i in range(n_top):
@@ -259,10 +190,9 @@ def draw_column_section(b, h, n_total, diameter_main):
     cover = 40
     ax.add_patch(patches.Rectangle((cover, cover), b-2*cover, h-2*cover, linewidth=2, edgecolor='#D32F2F', facecolor='none', linestyle='--'))
     
-    # Distribusi Tulangan Sederhana (4 Sudut + Sisa)
     bars = [(cover+10, cover+10), (b-cover-10, cover+10), (b-cover-10, h-cover-10), (cover+10, h-cover-10)]
     sisa = n_total - 4
-    if sisa > 0: # Tambah di tengah
+    if sisa > 0:
         bars.append((b/2, cover+10)); bars.append((b/2, h-cover-10))
         if sisa > 2: bars.append((cover+10, h/2)); bars.append((b-cover-10, h/2))
 
@@ -273,7 +203,7 @@ def draw_column_section(b, h, n_total, diameter_main):
     plt.axis('off'); plt.title("Detail Kolom", fontweight='bold')
     return fig
 
-# --- LOGIKA AUTO-DESIGN ---
+# --- LOGIKA PRAKTIS ---
 def auto_design_slab(As_req, thickness_mm):
     As_min = 0.0018 * 1000 * thickness_mm
     As_final = max(As_req, As_min)
@@ -308,13 +238,10 @@ def get_practical_stirrup(h_mm):
     spacing = math.floor(spacing / 25) * 25 
     return f"Ø8-{spacing:.0f}"
 
-# Database Persona AI
 gems_persona = {
-    "👑 The GEMS Grandmaster": "Anda adalah Direktur Proyek yang Bijaksana. Jawab dengan data teknis, SNI, dan solusi konkret.",
-    "🏗️ Ahli Struktur (Gedung)": "Anda Ahli Struktur SNI 2847. Fokus pada beton, baja, dan detailing tulangan.",
-    "🪨 Ahli Geoteknik (Tanah)": "Anda Ahli Geoteknik SNI 8460. Fokus pada pondasi dan daya dukung tanah.",
-    "💰 Ahli Estimator (QS)": "Anda Ahli Estimasi Biaya. Fokus pada volume dan efisiensi material.",
-    "🕌 Ahli Fiqih Bangunan": "Anda Penasihat Syariah. Fokus pada keberkahan dan adab membangun."
+    "👑 The GEMS Grandmaster": "Anda adalah Direktur Proyek. Jawab dengan data teknis, SNI, dan solusi konkret.",
+    "🏗️ Ahli Struktur": "Anda Ahli Struktur SNI 2847. Fokus pada beton, baja, dan detailing.",
+    "🪨 Ahli Geoteknik": "Anda Ahli Geoteknik SNI 8460. Fokus pada pondasi.",
 }
 
 # ==========================================
@@ -324,7 +251,7 @@ with st.sidebar:
     st.markdown("""
     <div style="text-align: center; padding: 15px; border-bottom: 2px solid #0D47A1; margin-bottom: 20px;">
         <h2 style="color:#0D47A1 !important; margin:0; font-size: 1.8rem; font-weight: 900;">Smart_Engineer</h2>
-        <span style="color:#FF6F00 !important; font-weight:bold; letter-spacing:2px; font-size:0.8rem;">OMNI-X EDITION</span>
+        <span style="color:#FF6F00 !important; font-weight:bold; letter-spacing:2px; font-size:0.8rem;">INTEGRATED VER</span>
     </div>
     """, unsafe_allow_html=True)
     
@@ -350,36 +277,20 @@ with st.sidebar:
     elif category == "F. STRUKTUR KHUSUS":
         module = st.radio("Pilih Modul:", ["26. Retaining Wall", "27. Kolam / Tandon", "28. Jembatan", "29. Konversi Tulangan"])
 
-    # AI Section
     st.markdown("---")
-    with st.expander("🤖 KONSULTASI AI (GEN-AI)", expanded=False):
+    with st.expander("🤖 KONSULTASI AI", expanded=False):
         api_key = st.text_input("🔑 Google API Key:", type="password")
         selected_model = st.selectbox("Model:", ["models/gemini-pro-latest", "models/gemini-flash-latest"], index=1)
-        selected_brain = st.selectbox("Spesialis:", list(gems_persona.keys()))
-        
-        if "messages" not in st.session_state:
-            st.session_state.messages = [{"role": "assistant", "content": "Halo! Ada yang bisa saya bantu?"}]
-            
-        for msg in st.session_state.messages:
-            st.chat_message(msg["role"]).write(msg["content"])
-            
         if prompt := st.chat_input("Tanya AI..."):
-            if not api_key:
-                st.error("API Key Kosong!")
+            if not api_key: st.error("API Key Kosong!")
             else:
-                st.session_state.messages.append({"role": "user", "content": prompt})
-                st.chat_message("user").write(prompt)
                 try:
                     genai.configure(api_key=api_key)
                     model_ai = genai.GenerativeModel(selected_model)
-                    full_prompt = f"{gems_persona[selected_brain]}\nUser: {prompt}"
-                    response = model_ai.generate_content(full_prompt)
-                    st.session_state.messages.append({"role": "assistant", "content": response.text})
-                    st.chat_message("assistant").write(response.text)
-                except Exception as e:
-                    st.error(f"Error: {e}")
+                    response = model_ai.generate_content(f"User bertanya teknik sipil: {prompt}")
+                    st.write(response.text)
+                except Exception as e: st.error(f"Error: {e}")
 
-    # FOOTER MERAH
     st.markdown("""
     <div class="sidebar-footer">
         <div class="footer-email">by smartstudioarsitek@gmail.com</div>
@@ -389,22 +300,23 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 4. LOGIKA PERHITUNGAN (FULL 29 MODUL)
+# 4. LOGIKA PERHITUNGAN (INTEGRATED)
 # ==========================================
 
 if category == "🏠 DASHBOARD":
     st.title("🚀 Smart_Engineer Dashboard")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.success("✅ **Status: SIAP (29 Modul)**")
-        st.write("Fitur: Analisis SNI Terupdate, Auto-Detailing, & Visualisasi.")
-    with col2:
-        st.info("ℹ️ **Tips:**")
-        st.write("Pilih modul di sidebar kiri untuk memulai perhitungan.")
+    st.info("💡 **Tips Integrasi:** Hitung Beban di Modul 1, lalu Gempa di Modul 5. Data akan mengalir otomatis!")
+    
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Wt (Beban Gempa)", f"{st.session_state['global_Wt']:,.0f} kN")
+    col2.metric("V (Base Shear)", f"{st.session_state['global_V']:,.0f} kN")
+    col3.metric("Mutu Beton (fc')", f"{st.session_state['global_fc']} MPa")
 
 # --- A. BEBAN & ATAP ---
 elif module == "1. Analisis Beban (Wt)":
     st.header("1. Analisis Beban (Wt)")
+    st.info("Output Wt akan disimpan otomatis untuk perhitungan Gempa (Modul 5).")
+    
     c1, c2 = st.columns(2)
     with c1:
         st.subheader("Atap")
@@ -419,10 +331,15 @@ elif module == "1. Analisis Beban (Wt)":
     
     N_typ = st.number_input("Jumlah Lantai Tipikal", 3)
     
-    if st.button("HITUNG"):
+    if st.button("HITUNG & SIMPAN DATA"):
         Wa = A1 * (D1 + 0.3*L1)
         Wt_typ = A2 * (D2 + 0.3*L2) * N_typ
         Wt_tot = (Wa + Wt_typ)/100 
+        
+        # LINK DATA: SIMPAN KE SESSION STATE
+        st.session_state['global_Wt'] = Wt_tot
+        
+        st.toast(f"✅ Data Wt {Wt_tot:.2f} kN tersimpan ke Memory!", icon="💾")
         st.markdown(f'<div class="res-box"><div>Wa: {Wa:,.0f} kg</div><div>Wt Typ: {Wt_typ:,.0f} kg</div><hr><div>Total Wt: <span class="res-val">{Wt_tot:.2f} kN</span></div></div>', unsafe_allow_html=True)
 
 elif module == "2. Konstruksi Atap":
@@ -455,13 +372,7 @@ elif module == "2. Konstruksi Atap":
         del_val = del_q + del_P
         
         status = "AMAN" if (sig < 1600 and del_val < (L_cm/240)) else "CEK PROFIL"
-        st.markdown(f"""
-        <div class="res-box">
-            <div>Mx: <span class="res-val">{Mx:.0f} kgcm</span></div>
-            <div>Tegangan: <span class="res-val">{sig:.0f} kg/cm²</span></div>
-            <div>Lendutan: <span class="res-val">{del_val:.2f} cm</span></div>
-            <div>Status: <span class="badge-ok">{status}</span></div>
-        </div>""", unsafe_allow_html=True)
+        st.markdown(f'<div class="res-box"><div>Mx: <span class="res-val">{Mx:.0f} kgcm</span></div><div>Tegangan: {sig:.0f} kg/cm²</div><div>Lendutan: {del_val:.2f} cm</div><div>Status: <span class="badge-ok">{status}</span></div></div>', unsafe_allow_html=True)
 
 elif module == "3. Tributary Area":
     st.header("3. Tributary Area")
@@ -481,60 +392,47 @@ elif module == "4. Pusat Massa (COG)":
 
 # --- B. GEMPA ---
 elif module == "5. Respon Spektrum":
-    # UPDATED: MENGGUNAKAN LOGIKA SNI 1726:2019 (INTERPOLASI SITE CLASS)
     st.header("5. Gempa SNI 1726:2019 (High Precision)")
+    
+    # LINK DATA: AMBIL WT DARI SESSION STATE
+    val_Wt = st.session_state['global_Wt']
     
     col_t1, col_t2 = st.columns(2)
     with col_t1:
         site_class = st.selectbox("Kelas Situs (Tanah)", ["SA", "SB", "SC", "SD", "SE"])
         Ss = st.number_input("Ss (Peta Gempa)", value=0.9, format="%.3f")
     with col_t2:
-        R_val = st.selectbox("Sistem R", [8, 5, 3], index=0) # SRPMK default
+        R_val = st.selectbox("Sistem R", [8, 5, 3], index=0) 
         S1 = st.number_input("S1 (Peta Gempa)", value=0.4, format="%.3f")
     
     Ie_val = st.selectbox("Faktor Keutamaan (Ie)", [1.0, 1.25, 1.5])
-    Wt = st.number_input("Berat Seismik Wt (kN)", 5000.0)
     
-    if st.button("HITUNG RESPON SPEKTRUM"):
-        # 1. Hitung Fa dan Fv (NEW ENGINE)
+    # INPUT FIELD OTOMATIS TERISI WT DARI MODUL 1
+    Wt = st.number_input("Berat Seismik Wt (kN)", value=val_Wt)
+    if val_Wt != 5000.0: st.caption("ℹ️ Nilai Wt diambil otomatis dari Modul 1.")
+    
+    if st.button("HITUNG & SIMPAN V BASE"):
         Fa, Fv = get_site_coefficients(site_class, Ss, S1)
         
         if Fa is not None:
-            # 2. Hitung SMS, SM1, SDS, SD1
             Sms = Fa * Ss
             Sm1 = Fv * S1
             Sds = (2/3) * Sms
             Sd1 = (2/3) * Sm1
-            
-            # 3. Hitung Base Shear (V)
-            # Batas Periode Pendek (Cs Max)
             Cs_calc = Sds / (R_val / Ie_val)
             V = Cs_calc * Wt
             
-            # Tampilkan Hasil Lengkap
-            st.success("✅ Perhitungan Selesai sesuai SNI 1726:2019")
+            # LINK DATA: SIMPAN V KE SESSION STATE
+            st.session_state['global_V'] = V
+            st.toast(f"✅ Base Shear V = {V:,.0f} kN tersimpan!", icon="💾")
             
             col_res1, col_res2 = st.columns(2)
             with col_res1:
-                st.markdown(f"""
-                <div class="res-box">
-                    <div class="res-label">Koefisien Situs:</div>
-                    <div>Fa = <b>{Fa:.3f}</b> | Fv = <b>{Fv:.3f}</b></div>
-                    <hr>
-                    <div class="res-label">Parameter Desain:</div>
-                    <div>SDS = <span class="res-val">{Sds:.3f} g</span></div>
-                    <div>SD1 = <span class="res-val">{Sd1:.3f} g</span></div>
-                </div>""", unsafe_allow_html=True)
-            
+                st.markdown(f'<div class="res-box"><div>Fa: <b>{Fa:.3f}</b> | Fv: <b>{Fv:.3f}</b></div><hr><div>SDS: <span class="res-val">{Sds:.3f} g</span></div><div>SD1: <span class="res-val">{Sd1:.3f} g</span></div></div>', unsafe_allow_html=True)
             with col_res2:
-                 st.markdown(f"""
-                <div class="res-box" style="border-left: 8px solid #2E7D32;">
-                    <div class="res-label">Gaya Geser Dasar (V):</div>
-                    <div class="res-val">{V:,.0f} kN</div>
-                    <div style="font-size:0.8rem; margin-top:5px;">(Asumsi Perioda Pendek)</div>
-                </div>""", unsafe_allow_html=True)
+                 st.markdown(f'<div class="res-box" style="border-left: 8px solid #2E7D32;"><div>Gaya Geser Dasar (V):</div><div class="res-val">{V:,.0f} kN</div></div>', unsafe_allow_html=True)
         else:
-            st.error("Kelas Situs SF memerlukan investigasi geoteknik khusus!")
+            st.error("Kelas Situs SF butuh investigasi khusus!")
 
 elif module == "6. Drift & Simpangan":
     st.header("6. Drift")
@@ -556,36 +454,26 @@ elif module == "7. Eksentrisitas":
         ed = 0.05*B
         st.markdown(f'<div class="res-box">e Bawaan: {e:.2f} <br> e Aksidental: <span class="res-val">{ed:.2f}</span></div>', unsafe_allow_html=True)
 
-# --- C. STRUKTUR ATAS (AUTO DETAILING + VISUALISASI) ---
+# --- C. STRUKTUR ATAS ---
 elif module == "8. Pelat Lantai":
-    st.header("8. Pelat Lantai (Auto-Detailing)")
+    st.header("8. Pelat Lantai")
     lx = st.number_input("Lx (m)", 3.0)
     ly = st.number_input("Ly (m)", 4.0)
     qp = st.number_input("Beban Total (kg/m2)", 600.0)
     tebal_plat = st.number_input("Tebal Pelat (mm)", 120.0)
     
     if st.button("HITUNG & DESAIN"):
-        M = 0.001 * qp * (lx**2) * 25 # kg.m
+        M = 0.001 * qp * (lx**2) * 25 
         Mu_kNm = M / 100
         d = tebal_plat - 20
         Mn = Mu_kNm * 1e6 / 0.8
         Rn = Mn / (1000 * d**2)
-        
         try:
             rho_approx = 0.85 * 25 / 240 * (1 - math.sqrt(1 - (2*Rn)/(0.85*25)))
             As_req = rho_approx * 1000 * d
             As_final, tulangan_fix = auto_design_slab(As_req, tebal_plat)
-            
-            st.markdown(f"""
-            <div class="res-box">
-                <div>Momen Lapangan: <span class="res-val">{Mu_kNm:.2f} kNm</span></div>
-                <div class="steel-res">
-                    <div>As Perlu: {As_final:.0f} mm²</div>
-                    <div>Rekomendasi Tulangan: <span class="res-steel">{tulangan_fix}</span></div>
-                </div>
-            </div>""", unsafe_allow_html=True)
-        except:
-            st.error("Tebal Pelat Terlalu Tipis!")
+            st.markdown(f'<div class="res-box"><div>Mu: {Mu_kNm:.2f} kNm</div><div class="steel-res"><div>As Perlu: {As_final:.0f} mm²</div><div>Tulangan: <span class="res-steel">{tulangan_fix}</span></div></div></div>', unsafe_allow_html=True)
+        except: st.error("Tebal Pelat Terlalu Tipis!")
 
 elif module == "9. Lendutan Pelat":
     st.header("9. Lendutan Pelat")
@@ -597,87 +485,56 @@ elif module == "9. Lendutan Pelat":
         st.markdown(f'<div class="res-box">h min: {hmin:.1f} cm <br> Status: {stat}</div>', unsafe_allow_html=True)
 
 elif module == "10. Desain Balok":
-    # UPDATED: MENGGUNAKAN LOGIKA SNI 2847:2019 (PHI DINAMIS)
-    st.header("10. Desain Balok (Strain-Based Approach)")
+    st.header("10. Desain Balok (Strain-Based SNI)")
     
+    # LINK DATA: INPUT MATERIAL (BISA DISIMPAN UNTUK KOLOM)
     c1, c2 = st.columns(2)
-    fc = c1.number_input("fc' (MPa)", 25.0)
-    fy = c2.number_input("fy (MPa)", 400.0)
+    fc = c1.number_input("fc' (MPa)", value=st.session_state['global_fc'])
+    fy = c2.number_input("fy (MPa)", value=st.session_state['global_fy'])
     
     c3, c4 = st.columns(2)
     b = c3.number_input("b (mm)", 300.0)
     h = c4.number_input("h (mm)", 600.0)
     Mu = st.number_input("Mu (kNm)", 150.0)
-    ds = st.number_input("Decking (mm)", 40.0) # Selimut beton + sengkang + 1/2 db
+    ds = st.number_input("Decking (mm)", 40.0)
     
-    if st.button("DESAIN & CEK PHI"):
+    if st.button("DESAIN & SIMPAN DATA MATERIAL"):
+        # LINK DATA: UPDATE GLOBAL MATERIAL
+        st.session_state['global_fc'] = fc
+        st.session_state['global_fy'] = fy
+        st.toast("Data Material fc & fy diperbarui!", icon="🧱")
+        
         d = h - ds
-        
-        # 1. Hitung Beta 1 Dinamis
         beta1 = get_beta1(fc)
-        
-        # 2. Iterasi Mencari As Perlu (Trial Awal)
         phi_trial = 0.9
         Mu_Nmm = Mu * 1e6
         
         try:
-            # Rn perlu dengan phi trial
             Mn_trial = Mu_Nmm / phi_trial
             Rn = Mn_trial / (b * d**2)
             m = fy / (0.85 * fc)
-            
-            # Rho Perlu
             rho = (1/m) * (1 - math.sqrt(1 - (2*m*Rn)/fy))
             As_req = rho * b * d
             
-            # 3. Hitung Tinggi Blok Tekan (a) dan Garis Netral (c) Aktual
             a_actual = (As_req * fy) / (0.85 * fc * b)
             c_actual = a_actual / beta1
-            
-            # 4. CEK PHI SEBENARNYA (Validasi SNI)
             phi_fix, epsilon_t, status_str = calculate_phi_moment(d, c_actual)
             
-            # Update Kapasitas dengan Phi Fix
             Mn_final = As_req * fy * (d - a_actual/2)
             Mu_capacity = phi_fix * Mn_final / 1e6
-            
-            # Visualisasi Tulangan
             tulangan_utama = auto_design_beam(As_req, b)
-            sengkang = get_practical_stirrup(h)
-
-            st.success(f"✅ Analisis Selesai: {status_str}")
             
+            st.success(f"✅ Analisis: {status_str}")
             col_res, col_img = st.columns([1.5, 1])
             with col_res:
-                st.markdown(f"""
-                <div class="res-box">
-                    <div><b>Analisis Penampang:</b></div>
-                    <div>Beta1: {beta1:.2f} | c: {c_actual:.1f} mm</div>
-                    <div>Regangan Baja (εt): <b>{epsilon_t:.4f}</b></div>
-                    <div>Faktor Reduksi (φ): <b>{phi_fix:.3f}</b></div>
-                    <hr>
-                    <div class="steel-res">
-                        <div>As Perlu: {As_req:.0f} mm²</div>
-                        <div>Tulangan: <span class="res-steel">{tulangan_utama}</span></div>
-                        <div>Kapasitas (φMn): {Mu_capacity:.1f} kNm</div>
-                    </div>
-                </div>""", unsafe_allow_html=True)
-                
-                if phi_fix < 0.9:
-                    st.warning(f"⚠️ PERHATIAN: Balok tidak terkendali tarik penuh (φ={phi_fix:.2f}). Struktur mungkin kurang daktail.")
-            
+                st.markdown(f'<div class="res-box"><div>Beta1: {beta1:.2f} | εt: <b>{epsilon_t:.4f}</b></div><div>Faktor Reduksi (φ): <b>{phi_fix:.3f}</b></div><hr><div class="steel-res"><div>As Perlu: {As_req:.0f} mm²</div><div>Tulangan: <span class="res-steel">{tulangan_utama}</span></div><div>Kap. (φMn): {Mu_capacity:.1f} kNm</div></div></div>', unsafe_allow_html=True)
             with col_img:
                 parts = tulangan_utama.split(' D')
-                try:
-                    n_bars = int(parts[0])
-                    d_bars = int(parts[1])
-                except:
-                    n_bars = 4; d_bars = 16
+                try: n_bars = int(parts[0]); d_bars = int(parts[1])
+                except: n_bars = 4; d_bars = 16
                 fig = draw_beam_section(b, h, 2, n_bars, d_bars, 8)
                 st.pyplot(fig)
-
-        except ValueError:
-            st.error("❌ Penampang terlalu kecil! Terjadi keruntuhan tekan sebelum tarik (Over-Reinforced). Perbesar dimensi balok.")
+        except ValueError: st.error("❌ Penampang terlalu kecil!")
 
 elif module == "11. Torsi Balok":
     st.header("11. Torsi Balok")
@@ -688,10 +545,14 @@ elif module == "11. Torsi Balok":
         st.markdown(f'<div class="res-box">Status: <span class="res-val">{stat}</span></div>', unsafe_allow_html=True)
 
 elif module == "12. Desain Kolom":
-    st.header("12. Desain Kolom (Auto-Check & Visualisasi)")
+    st.header("12. Desain Kolom")
+    
+    # LINK DATA: AMBIL MATERIAL DARI GLOBAL
+    fc = st.number_input("fc' (MPa)", value=st.session_state['global_fc'])
+    fy = 400.0 # Default tulangan
+    
     b = st.number_input("b (mm)", 500.0)
     h = st.number_input("h (mm)", 500.0)
-    fc = st.number_input("fc' (MPa)", 30.0)
     Pu = st.number_input("Pu (kN)", 2500.0)
     
     if st.button("CEK KAPASITAS"):
@@ -707,25 +568,25 @@ elif module == "12. Desain Kolom":
         
         col_res, col_img = st.columns([1.5, 1])
         with col_res:
-            st.markdown(f"""
-            <div class="res-box">
-                <div>Kapasitas (ρ=1%): <span class="res-val">{phiPn:.0f} kN</span></div>
-                <div>Status: <span class="badge-ok">{stat}</span></div>
-                <div class="steel-res">
-                    <div>Rekomendasi Tulangan: <span class="res-steel">{n_bars} D19</span></div>
-                    <div>Sengkang: Ø10-150</div>
-                </div>
-            </div>""", unsafe_allow_html=True)
+            st.markdown(f'<div class="res-box"><div>Kapasitas (ρ=1%): <span class="res-val">{phiPn:.0f} kN</span></div><div>Status: <span class="badge-ok">{stat}</span></div><div class="steel-res"><div>Tulangan: <span class="res-steel">{n_bars} D19</span></div></div></div>', unsafe_allow_html=True)
         with col_img:
             fig = draw_column_section(b, h, n_bars, 19)
             st.pyplot(fig)
 
 elif module == "13. Shear Wall":
     st.header("13. Shear Wall")
-    fc = st.number_input("fc' (MPa)", 30.0)
+    
+    # LINK DATA: AMBIL V GEMPA DARI GLOBAL
+    val_V = st.session_state['global_V']
+    
+    fc = st.number_input("fc' (MPa)", value=st.session_state['global_fc'])
     lw = st.number_input("lw (mm)", 4000.0)
     tw = st.number_input("tebal (mm)", 250.0)
-    Vu = st.number_input("Vu (kN)", 1500.0)
+    
+    # OTOMATIS TERISI DARI MODUL GEMPA
+    Vu = st.number_input("Vu (kN)", value=val_V)
+    if val_V != 1500.0: st.caption("ℹ️ Vu diambil otomatis dari Base Shear Modul 5.")
+
     if st.button("CEK"):
         Vc = 0.17 * math.sqrt(fc) * tw * (0.8*lw)
         phiVc = 0.75 * Vc / 1000
@@ -765,14 +626,7 @@ elif module == "17. Sloof (Tie Beam)":
     L = st.number_input("Bentang (m)", 6.0)
     if st.button("HITUNG"):
         Mu = 0.1 * q * L**2
-        st.markdown(f"""
-        <div class="res-box">
-            <div>Mu: {Mu:.0f} kgm</div>
-            <div class="steel-res">
-                <div>Tulangan Praktis: <span class="res-steel">4 D13</span></div>
-                <div>Sengkang: Ø8-200</div>
-            </div>
-        </div>""", unsafe_allow_html=True)
+        st.markdown(f'<div class="res-box"><div>Mu: {Mu:.0f} kgm</div><div class="steel-res"><div>Tulangan: <span class="res-steel">4 D13</span></div><div>Sengkang: Ø8-200</div></div></div>', unsafe_allow_html=True)
 
 elif module == "18. Pelat Westergaard":
     st.header("18. Westergaard")
