@@ -1,9 +1,11 @@
 import streamlit as st
 import math
 import google.generativeai as genai
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 # ==========================================
-# 1. KONFIGURASI HALAMAN & CSS (TEMA CLEAN & PROFESSIONAL)
+# 1. KONFIGURASI HALAMAN & CSS
 # ==========================================
 st.set_page_config(
     page_title="Smart_Engineer OMNI-X",
@@ -29,7 +31,7 @@ st.markdown("""
         color: #000000 !important;
     }
     
-    /* Styling Input Fields di Sidebar agar terlihat jelas */
+    /* Styling Input Fields di Sidebar */
     section[data-testid="stSidebar"] input, 
     section[data-testid="stSidebar"] select,
     section[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
@@ -56,9 +58,9 @@ st.markdown("""
         color: #263238;
     }
     
-    /* Kotak Hasil Detailing Besi */
+    /* Hasil Detailing Besi */
     .steel-res {
-        background-color: #E8F5E9; /* Hijau Muda */
+        background-color: #E8F5E9;
         padding: 15px;
         border-radius: 8px;
         margin-top: 15px;
@@ -82,7 +84,7 @@ st.markdown("""
 
     .res-steel {
         font-weight: 900;
-        color: #2E7D32; /* Hijau Tua */
+        color: #2E7D32;
         font-size: 1.4rem;
         font-family: 'Consolas', monospace;
     }
@@ -116,7 +118,7 @@ st.markdown("""
         text-align: center;
         margin-top: 30px;
         padding: 20px;
-        background: #FFEBEE; /* Latar Merah Muda Sangat Tipis */
+        background: #FFEBEE;
         border-top: 2px solid #FFCDD2;
         border-radius: 8px;
     }
@@ -124,110 +126,119 @@ st.markdown("""
     .footer-donasi { color: #D50000 !important; font-weight: 900; margin-top: 10px; font-size: 0.9rem; text-transform: uppercase; }
     .footer-norek { color: #D50000 !important; font-family: monospace; font-size: 1.1rem; font-weight: 900; letter-spacing: 1px; }
     
-    /* Chat Bubble Fix for White Background */
+    /* Chat Bubble Fix */
     .stChatMessage { background-color: #FFFFFF; border: 1px solid #E0E0E0; }
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. HELPER FUNCTIONS (RUMUS TEKNIS)
+# 2. FUNGSI BANTUAN TEKNIS & VISUALISASI
 # ==========================================
 def safe_div(n, d, default=0.0):
     return n / d if d != 0 else default
 
 def get_steel_area(diameter):
-    """Menghitung luas penampang 1 batang tulangan (mm2)"""
+    """Luas penampang 1 batang tulangan (mm2)"""
     return 0.25 * math.pi * (diameter**2)
 
+# --- FUNGSI GAMBAR (VISUALISASI) ---
+def draw_beam_section(b, h, n_top, n_bottom, diameter_main, diameter_stirrup, title="Detail Balok"):
+    fig, ax = plt.subplots(figsize=(4, (h/b)*3.5 if b>0 else 4))
+    # Beton
+    concrete = patches.Rectangle((0, 0), b, h, linewidth=2, edgecolor='#555', facecolor='#E0E0E0')
+    ax.add_patch(concrete)
+    # Sengkang (Selimut 40mm)
+    cover = 40
+    stirrup = patches.Rectangle((cover, cover), b-2*cover, h-2*cover, linewidth=2, edgecolor='#D32F2F', facecolor='none', linestyle='--')
+    ax.add_patch(stirrup)
+    
+    def draw_bar(x, y, d, color='#1565C0'):
+        circle = patches.Circle((x, y), d/2, linewidth=1, edgecolor='black', facecolor=color)
+        ax.add_patch(circle)
+
+    y_bot = cover + diameter_stirrup + diameter_main/2
+    y_top = h - (cover + diameter_stirrup + diameter_main/2)
+    
+    # Tulangan Bawah
+    if n_bottom > 0:
+        if n_bottom == 1: draw_bar(b/2, y_bot, diameter_main)
+        else:
+            spacing = (b - 2*cover - 2*diameter_stirrup - diameter_main) / (n_bottom - 1)
+            for i in range(n_bottom):
+                draw_bar(cover + diameter_stirrup + diameter_main/2 + (i * spacing), y_bot, diameter_main)
+    # Tulangan Atas (Min 2)
+    n_top = max(n_top, 2) 
+    spacing_top = (b - 2*cover - 2*diameter_stirrup - diameter_main) / (n_top - 1)
+    for i in range(n_top):
+        draw_bar(cover + diameter_stirrup + diameter_main/2 + (i * spacing_top), y_top, diameter_main)
+
+    ax.set_xlim(-50, b+50); ax.set_ylim(-50, h+50)
+    plt.axis('off'); plt.title(title, fontweight='bold')
+    return fig
+
+def draw_column_section(b, h, n_total, diameter_main):
+    fig, ax = plt.subplots(figsize=(4, (h/b)*3.5 if b>0 else 4))
+    concrete = patches.Rectangle((0, 0), b, h, linewidth=2, edgecolor='#333', facecolor='#CFD8DC')
+    ax.add_patch(concrete)
+    cover = 40
+    ax.add_patch(patches.Rectangle((cover, cover), b-2*cover, h-2*cover, linewidth=2, edgecolor='#D32F2F', facecolor='none', linestyle='--'))
+    
+    # Distribusi Tulangan Sederhana (4 Sudut + Sisa)
+    bars = [(cover+10, cover+10), (b-cover-10, cover+10), (b-cover-10, h-cover-10), (cover+10, h-cover-10)]
+    sisa = n_total - 4
+    if sisa > 0: # Tambah di tengah
+        bars.append((b/2, cover+10)); bars.append((b/2, h-cover-10))
+        if sisa > 2: bars.append((cover+10, h/2)); bars.append((b-cover-10, h/2))
+
+    for (x, y) in bars:
+        ax.add_patch(patches.Circle((x, y), diameter_main/2, edgecolor='black', facecolor='#1565C0'))
+
+    ax.set_xlim(-50, b+50); ax.set_ylim(-50, h+50)
+    plt.axis('off'); plt.title("Detail Kolom", fontweight='bold')
+    return fig
+
+# --- LOGIKA AUTO-DESIGN ---
 def auto_design_slab(As_req, thickness_mm):
-    """
-    Otomatisasi Tulangan Pelat (Slabs)
-    Output: String rekomendasi (misal: D10-150)
-    """
-    # Cek Tulangan Minimum (Susut Suhu) SNI: 0.0018 * b * h
     As_min = 0.0018 * 1000 * thickness_mm
     As_final = max(As_req, As_min)
-    
-    # Opsi diameter yang umum di pasaran
     options = [8, 10, 12, 13]
     best_option = ""
-    
     for D in options:
         A_bar = get_steel_area(D)
-        # Hitung jarak s = (1000 * A_bar) / As
         s_calc = (1000 * A_bar) / As_final
-        
-        # Jarak maksimal SNI (2h atau 450mm, ambil konservatif 200mm/250mm)
         s_max = min(2 * thickness_mm, 250) 
-        
-        # Round down ke kelipatan 25mm (e.g. 138 -> 125)
         s_design = math.floor(min(s_calc, s_max) / 25) * 25
-        
-        if s_design >= 100: # Jarak terlalu rapat ( < 100mm) susah dicor
-            best_option = f"D{D}-{s_design:.0f}"
-            break # Ambil diameter terkecil yang memenuhi syarat jarak
-            
-    if best_option == "":
-        best_option = "D13-100 (Perlu Cek Ulang)"
-        
+        if s_design >= 100: 
+            best_option = f"D{D}-{s_design:.0f}"; break
+    if best_option == "": best_option = "D13-100 (Perlu Cek)"
     return As_final, best_option
 
 def auto_design_beam(As_req, width_mm):
-    """
-    Otomatisasi Tulangan Balok (Beams)
-    Output: String rekomendasi (misal: 4 D16)
-    """
     options = [13, 16, 19, 22, 25]
     best_config = ""
-    
     for D in options:
         A_bar = get_steel_area(D)
         n = math.ceil(As_req / A_bar)
-        
-        # Cek spasi cukup dalam lebar balok? (Simplified)
         max_bar_layer = (width_mm - 80) / (D + 25)
-        
-        if n >= 2 and n <= max_bar_layer * 2: # Max 2 lapis
-            best_config = f"{n} D{D}"
-            break
-            
-    if best_config == "":
-        A_bar_16 = get_steel_area(16)
-        n_16 = math.ceil(As_req / A_bar_16)
+        if n >= 2 and n <= max_bar_layer * 2: 
+            best_config = f"{n} D{D}"; break
+    if best_config == "": 
+        n_16 = math.ceil(As_req / get_steel_area(16))
         best_config = f"{n_16} D16"
-        
     return best_config
 
 def get_practical_stirrup(h_mm):
-    """Rekomendasi Sengkang Praktis"""
     spacing = min(h_mm/2, 200)
-    spacing = math.floor(spacing / 25) * 25 # Round to 25mm
+    spacing = math.floor(spacing / 25) * 25 
     return f"Ø8-{spacing:.0f}"
 
 # Database Persona AI
 gems_persona = {
-    "👑 The GEMS Grandmaster": """
-        ANDA ADALAH "THE GEMS GRANDMASTER" (Direktur Proyek).
-        Gaya: Profesional, Tegas, namun tetap sopan dan solutif.
-        Tugas: Mengoordinasikan seluruh aspek teknis (Struktur, Geoteknik, Manajemen).
-    """,
-    "🏗️ Ahli Struktur (Gedung)": """
-        ANDA ADALAH AHLI STRUKTUR (SNI 2847 & 1726).
-        Fokus: Beton bertulang, baja, dan analisis gempa.
-        Tugas: Hitung dimensi, tulangan, dan kapasitas penampang.
-    """,
-    "🪨 Ahli Geoteknik (Tanah)": """
-        ANDA ADALAH AHLI GEOTEKNIK (SNI 8460).
-        Fokus: Pondasi dangkal, dalam, dan dinding penahan tanah.
-    """,
-    "💰 Ahli Estimator (QS)": """
-        ANDA ADALAH AHLI ESTIMASI BIAYA (RAB).
-        Fokus: Volume pekerjaan dan analisa harga satuan.
-    """,
-    "🕌 Ahli Fiqih Bangunan": """
-        ANDA ADALAH PENASIHAT SYARIAH PROYEK.
-        Fokus: Adab membangun, arah kiblat, dan keberkahan bangunan.
-    """
+    "👑 The GEMS Grandmaster": "Anda adalah Direktur Proyek yang Bijaksana. Jawab dengan data teknis, SNI, dan solusi konkret.",
+    "🏗️ Ahli Struktur (Gedung)": "Anda Ahli Struktur SNI 2847. Fokus pada beton, baja, dan detailing tulangan.",
+    "🪨 Ahli Geoteknik (Tanah)": "Anda Ahli Geoteknik SNI 8460. Fokus pada pondasi dan daya dukung tanah.",
+    "💰 Ahli Estimator (QS)": "Anda Ahli Estimasi Biaya. Fokus pada volume dan efisiensi material.",
+    "🕌 Ahli Fiqih Bangunan": "Anda Penasihat Syariah. Fokus pada keberkahan dan adab membangun."
 }
 
 # ==========================================
@@ -243,21 +254,13 @@ with st.sidebar:
     
     st.markdown("### 📂 MENU UTAMA")
     category = st.selectbox("Pilih Kategori:", [
-        "🏠 DASHBOARD",
-        "A. BEBAN & ATAP",
-        "B. GEMPA & STABILITAS",
-        "C. STRUKTUR ATAS",
-        "D. PONDASI DANGKAL",
-        "E. PONDASI DALAM",
-        "F. STRUKTUR KHUSUS"
+        "🏠 DASHBOARD", "A. BEBAN & ATAP", "B. GEMPA & STABILITAS", 
+        "C. STRUKTUR ATAS", "D. PONDASI DANGKAL", "E. PONDASI DALAM", "F. STRUKTUR KHUSUS"
     ])
 
     st.markdown("---")
     
-    # Sub-Menu (Dynamic)
-    st.markdown("### 🛠️ MODUL PERHITUNGAN")
     module = None
-    
     if category == "A. BEBAN & ATAP":
         module = st.radio("Pilih Modul:", ["1. Analisis Beban (Wt)", "2. Konstruksi Atap", "3. Tributary Area", "4. Pusat Massa (COG)"])
     elif category == "B. GEMPA & STABILITAS":
@@ -300,7 +303,7 @@ with st.sidebar:
                 except Exception as e:
                     st.error(f"Error: {e}")
 
-    # FOOTER (MERAH SESUAI REQUEST)
+    # FOOTER MERAH
     st.markdown("""
     <div class="sidebar-footer">
         <div class="footer-email">by smartstudioarsitek@gmail.com</div>
@@ -310,19 +313,18 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 4. LOGIKA PERHITUNGAN (29 MODUL + DETAILING)
+# 4. LOGIKA PERHITUNGAN (FULL 29 MODUL)
 # ==========================================
 
 if category == "🏠 DASHBOARD":
     st.title("🚀 Smart_Engineer Dashboard")
-    st.markdown("### OMNI-X Edition (Auto-Detailing Ready)")
     col1, col2 = st.columns(2)
     with col1:
-        st.success("✅ **Integrasi Sistem Selesai**")
-        st.write("29 Modul telah diverifikasi dengan fitur Auto-Detailing Tulangan.")
+        st.success("✅ **Status: SIAP (29 Modul)**")
+        st.write("Fitur: Analisis SNI, Auto-Detailing, & Visualisasi.")
     with col2:
-        st.info("ℹ️ **Sidebar White Mode**")
-        st.write("Tampilan kontras tinggi untuk kenyamanan mata.")
+        st.info("ℹ️ **Tips:**")
+        st.write("Pilih modul di sidebar kiri untuk memulai perhitungan.")
 
 # --- A. BEBAN & ATAP ---
 elif module == "1. Analisis Beban (Wt)":
@@ -358,6 +360,8 @@ elif module == "2. Konstruksi Atap":
     with c2:
         qDa = st.number_input("DL (kg/m2)", 25.0)
         Pa = st.number_input("LL (kg)", 100.0)
+        E_val = st.number_input("E (kg/cm2)", 2100000.0)
+        Ix_val = st.number_input("Ix (cm4)", 150.0)
         
     if st.button("ANALISIS"):
         rad = math.radians(aa)
@@ -365,18 +369,22 @@ elif module == "2. Konstruksi Atap":
         Mx = (1/8) * (q * math.cos(rad)) * (La**2) * 100 
         My = Mx * 0.1
         sig = safe_div(Mx, Wx)
-        E = 2.1e6; Ix = 150 
-        del_val = (5 * q * math.cos(rad) * math.pow(La*100, 4)) / (384 * E * Ix * 100)
         
-        status = "AMAN" if (sig < 1600 and del_val < (La*100)/240) else "CEK PROFIL"
-        badge = "badge-ok" if status == "AMAN" else "badge-no"
+        L_cm = La * 100
+        q_perp_cm = (q * math.cos(rad)) / 100 
+        P_perp = Pa * math.cos(rad)
         
+        del_q = (5 * q_perp_cm * math.pow(L_cm, 4)) / (384 * E_val * Ix_val)
+        del_P = (1 * P_perp * math.pow(L_cm, 3)) / (48 * E_val * Ix_val)
+        del_val = del_q + del_P
+        
+        status = "AMAN" if (sig < 1600 and del_val < (L_cm/240)) else "CEK PROFIL"
         st.markdown(f"""
         <div class="res-box">
             <div>Mx: <span class="res-val">{Mx:.0f} kgcm</span></div>
             <div>Tegangan: <span class="res-val">{sig:.0f} kg/cm²</span></div>
             <div>Lendutan: <span class="res-val">{del_val:.2f} cm</span></div>
-            <div>Status: <span class="{badge}">{status}</span></div>
+            <div>Status: <span class="badge-ok">{status}</span></div>
         </div>""", unsafe_allow_html=True)
 
 elif module == "3. Tributary Area":
@@ -401,10 +409,8 @@ elif module == "5. Respon Spektrum":
     c1, c2 = st.columns(2)
     Ss = c1.number_input("Ss", 0.9)
     S1 = c2.number_input("S1", 0.4)
-    with c1:
-        R_val = st.selectbox("Sistem R", [8, 5, 3])
-    with c2:
-        Ie_val = st.selectbox("Faktor Ie", [1.0, 1.5])
+    with c1: R_val = st.selectbox("Sistem R", [8, 5, 3])
+    with c2: Ie_val = st.selectbox("Faktor Ie", [1.0, 1.5])
     Wt = st.number_input("Wt (kN)", 5000.0)
     
     if st.button("HITUNG"):
@@ -432,21 +438,17 @@ elif module == "7. Eksentrisitas":
         ed = 0.05*B
         st.markdown(f'<div class="res-box">e Bawaan: {e:.2f} <br> e Aksidental: <span class="res-val">{ed:.2f}</span></div>', unsafe_allow_html=True)
 
-# --- C. STRUKTUR ATAS (AUTO DETAILING) ---
+# --- C. STRUKTUR ATAS (AUTO DETAILING + VISUALISASI) ---
 elif module == "8. Pelat Lantai":
     st.header("8. Pelat Lantai (Auto-Detailing)")
     lx = st.number_input("Lx (m)", 3.0)
     ly = st.number_input("Ly (m)", 4.0)
     qp = st.number_input("Beban Total (kg/m2)", 600.0)
-    
-    # Input tambahan untuk detailing
     tebal_plat = st.number_input("Tebal Pelat (mm)", 120.0)
     
     if st.button("HITUNG & DESAIN"):
         M = 0.001 * qp * (lx**2) * 25 # kg.m
         Mu_kNm = M / 100
-        
-        # Hitung As Perlu (Simplifikasi Rho approx)
         d = tebal_plat - 20
         Mn = Mu_kNm * 1e6 / 0.8
         Rn = Mn / (1000 * d**2)
@@ -454,8 +456,6 @@ elif module == "8. Pelat Lantai":
         try:
             rho_approx = 0.85 * 25 / 240 * (1 - math.sqrt(1 - (2*Rn)/(0.85*25)))
             As_req = rho_approx * 1000 * d
-            
-            # Auto Detailing
             As_final, tulangan_fix = auto_design_slab(As_req, tebal_plat)
             
             st.markdown(f"""
@@ -463,13 +463,11 @@ elif module == "8. Pelat Lantai":
                 <div>Momen Lapangan: <span class="res-val">{Mu_kNm:.2f} kNm</span></div>
                 <div class="steel-res">
                     <div>As Perlu: {As_final:.0f} mm²</div>
-                    <div>Rasio (ρ): {rho_approx:.4f}</div>
-                    <div>Rekomendasi Tulangan:</div>
-                    <div class="res-steel">{tulangan_fix}</div>
+                    <div>Rekomendasi Tulangan: <span class="res-steel">{tulangan_fix}</span></div>
                 </div>
             </div>""", unsafe_allow_html=True)
         except:
-            st.error("Tebal Pelat Terlalu Tipis! Perbesar tebal.")
+            st.error("Tebal Pelat Terlalu Tipis!")
 
 elif module == "9. Lendutan Pelat":
     st.header("9. Lendutan Pelat")
@@ -481,7 +479,7 @@ elif module == "9. Lendutan Pelat":
         st.markdown(f'<div class="res-box">h min: {hmin:.1f} cm <br> Status: {stat}</div>', unsafe_allow_html=True)
 
 elif module == "10. Desain Balok":
-    st.header("10. Desain Balok (Auto-Detailing)")
+    st.header("10. Desain Balok (Auto-Detailing & Visualisasi)")
     c1, c2 = st.columns(2)
     fc = c1.number_input("fc' (MPa)", 25.0)
     fy = c2.number_input("fy (MPa)", 400.0)
@@ -502,22 +500,33 @@ elif module == "10. Desain Balok":
             if rho < rho_min: rho = rho_min
             
             As = rho * b * d
-            
-            # Auto Detailing
             tulangan_utama = auto_design_beam(As, b)
             sengkang = get_practical_stirrup(h)
             
-            st.markdown(f"""
-            <div class="res-box">
-                <div>Rn: {Rn:.2f} MPa</div>
-                <div class="steel-res">
-                    <div>As Perlu: {As:.0f} mm² (ρ = {rho:.4f})</div>
-                    <div>Tulangan Utama: <span class="res-steel">{tulangan_utama}</span></div>
-                    <div>Sengkang Praktis: <span class="res-val">{sengkang}</span></div>
-                </div>
-            </div>""", unsafe_allow_html=True)
+            # Parsing untuk Visualisasi
+            try:
+                parts = tulangan_utama.split(' D')
+                n_bars = int(parts[0])
+                d_bars = int(parts[1])
+            except:
+                n_bars = 4; d_bars = 16
+
+            col_res, col_img = st.columns([1.5, 1])
+            with col_res:
+                st.markdown(f"""
+                <div class="res-box">
+                    <div>Rn: {Rn:.2f} MPa</div>
+                    <div class="steel-res">
+                        <div>As Perlu: {As:.0f} mm² (ρ = {rho:.4f})</div>
+                        <div>Tulangan Utama: <span class="res-steel">{tulangan_utama}</span></div>
+                        <div>Sengkang: <span class="res-val">{sengkang}</span></div>
+                    </div>
+                </div>""", unsafe_allow_html=True)
+            with col_img:
+                fig = draw_beam_section(b, h, 2, n_bars, d_bars, 8)
+                st.pyplot(fig)
         except:
-            st.error("Penampang Balok Terlalu Kecil! Perbesar ukuran.")
+            st.error("Penampang Balok Terlalu Kecil!")
 
 elif module == "11. Torsi Balok":
     st.header("11. Torsi Balok")
@@ -528,7 +537,7 @@ elif module == "11. Torsi Balok":
         st.markdown(f'<div class="res-box">Status: <span class="res-val">{stat}</span></div>', unsafe_allow_html=True)
 
 elif module == "12. Desain Kolom":
-    st.header("12. Desain Kolom (Auto-Check)")
+    st.header("12. Desain Kolom (Auto-Check & Visualisasi)")
     b = st.number_input("b (mm)", 500.0)
     h = st.number_input("h (mm)", 500.0)
     fc = st.number_input("fc' (MPa)", 30.0)
@@ -536,27 +545,29 @@ elif module == "12. Desain Kolom":
     
     if st.button("CEK KAPASITAS"):
         Ag = b*h
-        # Asumsi tulangan 1% - 3%
         Ast_1 = 0.01 * Ag
         Pn = 0.80 * (0.85*fc*(Ag - Ast_1) + 400*Ast_1)
         phiPn = 0.65 * Pn / 1000
-        
         stat = "AMAN" if phiPn > Pu else "BAHAYA"
         
-        # Rekomendasi Tulangan
-        n_bars = math.ceil(Ast_1 / get_steel_area(19)) # Pakai D19 standard kolom
+        n_bars = math.ceil(Ast_1 / get_steel_area(19)) 
         if n_bars % 2 != 0: n_bars += 1
+        if n_bars < 4: n_bars = 4
         
-        st.markdown(f"""
-        <div class="res-box">
-            <div>Kapasitas (ρ=1%): <span class="res-val">{phiPn:.0f} kN</span></div>
-            <div>Status: <span class="badge-ok">{stat}</span></div>
-            <div class="steel-res">
-                <div>Rekomendasi Tulangan (Min 1%):</div>
-                <div class="res-steel">{n_bars} D19</div>
-                <div>Sengkang: Ø10-150</div>
-            </div>
-        </div>""", unsafe_allow_html=True)
+        col_res, col_img = st.columns([1.5, 1])
+        with col_res:
+            st.markdown(f"""
+            <div class="res-box">
+                <div>Kapasitas (ρ=1%): <span class="res-val">{phiPn:.0f} kN</span></div>
+                <div>Status: <span class="badge-ok">{stat}</span></div>
+                <div class="steel-res">
+                    <div>Rekomendasi Tulangan: <span class="res-steel">{n_bars} D19</span></div>
+                    <div>Sengkang: Ø10-150</div>
+                </div>
+            </div>""", unsafe_allow_html=True)
+        with col_img:
+            fig = draw_column_section(b, h, n_bars, 19)
+            st.pyplot(fig)
 
 elif module == "13. Shear Wall":
     st.header("13. Shear Wall")
@@ -607,8 +618,7 @@ elif module == "17. Sloof (Tie Beam)":
         <div class="res-box">
             <div>Mu: {Mu:.0f} kgm</div>
             <div class="steel-res">
-                <div>Tulangan Praktis:</div>
-                <div class="res-steel">4 D13</div>
+                <div>Tulangan Praktis: <span class="res-steel">4 D13</span></div>
                 <div>Sengkang: Ø8-200</div>
             </div>
         </div>""", unsafe_allow_html=True)
@@ -682,8 +692,7 @@ elif module == "24. Efisiensi Grup":
     D = st.number_input("D (cm)", 40.0)
     s = st.number_input("s (cm)", 120.0)
     if st.button("HITUNG"):
-        deg = math.degrees(math.atan(D/s))
-        eg = 1 - deg/90 * ((n*(m-1)+m*(n-1))/(m*n))
+        eg = 1 - math.degrees(math.atan(D/s))/90 * ((n*(m-1)+m*(n-1))/(m*n))
         st.markdown(f'<div class="res-box">Eg: {eg:.3f}</div>', unsafe_allow_html=True)
 
 elif module == "25. Cek Cabut (Uplift)":
